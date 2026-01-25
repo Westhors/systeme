@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\ContactPeopleController;
@@ -156,3 +157,16 @@ Route::middleware(['admin'])->group(function () {
 });
 //////////////////////////////////////// unit ////////////////////////////////
 //////////////////////////////////////// unit ////////////////////////////////
+
+//////////////////////////////////////// category ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/category/index', [CategoryController::class, 'index']);
+    Route::post('category/restore', [CategoryController::class, 'restore']);
+    Route::delete('category/delete', [CategoryController::class, 'destroy']);
+    Route::put('/category/{id}/{column}', [CategoryController::class, 'toggle']);
+    Route::delete('category/force-delete', [CategoryController::class, 'forceDelete']);
+    Route::apiResource('category', CategoryController::class);
+});
+//////////////////////////////////////// category ////////////////////////////////
+//////////////////////////////////////// category ////////////////////////////////
