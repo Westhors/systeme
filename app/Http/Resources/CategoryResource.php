@@ -14,18 +14,15 @@ class CategoryResource extends JsonResource
             'icon'      => $this->icon,
             'parent_id' => $this->parent_id,
 
-            // ✅ يحدد النوع
             'type' => $this->parent_id === null
                 ? 'category'
                 : 'sub_category',
 
-            // ✅ يرجع بيانات الأب لو Sub Category
             'parent' => $this->when(
                 $this->parent_id !== null,
                 fn () => new CategoryResource($this->parent)
             ),
 
-            // (اختياري) الأطفال لو Category
             'children' => $this->when(
                 $this->parent_id === null && $this->relationLoaded('children'),
                 fn () => CategoryResource::collection($this->children)
