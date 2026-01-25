@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\ColorController;
 use App\Http\Controllers\ContactPeopleController;
 use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\CountryController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SliderController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TermsConditionController;
+use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VisitController;
 use App\Http\Controllers\WarehouseController;
@@ -78,6 +80,9 @@ Route::middleware(['admin'])->group(function () {
     Route::apiResource('admin', AdminController::class);
 Route::post('/admin/login', [AdminController::class, 'login']);
 ////////////////////////////////////////// Admin ////////////////////////////////
+////////////////////////////////////////// Admin ////////////////////////////////
+
+////////////////////////////////////////// media ////////////////////////////////
 
 
 
@@ -93,8 +98,12 @@ Route::get('/get-media/{media}', [MediaController::class, 'show']);
 Route::post('/media-array', [MediaController::class, 'showMedia']);
 Route::post('/media-upload-many', [MediaController::class, 'storeMany']);
 
-//////////////////////////////////////// Menu Item ////////////////////////////////
+//////////////////////////////////////// media ////////////////////////////////
+//////////////////////////////////////// media ////////////////////////////////
 
+
+
+//////////////////////////////////////// branch ////////////////////////////////
 
 Route::middleware(['admin'])->group(function () {
     Route::post('/branch/index', [BranchController::class, 'index']);
@@ -104,7 +113,10 @@ Route::middleware(['admin'])->group(function () {
     Route::delete('branch/force-delete', [BranchController::class, 'forceDelete']);
     Route::apiResource('branch', BranchController::class);
 });
+//////////////////////////////////////// branch ////////////////////////////////
+//////////////////////////////////////// branch ////////////////////////////////
 
+//////////////////////////////////////// warehouse ////////////////////////////////
 
 Route::middleware(['admin'])->group(function () {
     Route::post('/warehouse/index', [WarehouseController::class, 'index']);
@@ -114,3 +126,33 @@ Route::middleware(['admin'])->group(function () {
     Route::delete('warehouse/force-delete', [WarehouseController::class, 'forceDelete']);
     Route::apiResource('warehouse', WarehouseController::class);
 });
+//////////////////////////////////////// warehouse ////////////////////////////////
+//////////////////////////////////////// warehouse ////////////////////////////////
+
+
+//////////////////////////////////////// color ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/color/index', [ColorController::class, 'index']);
+    Route::post('color/restore', [ColorController::class, 'restore']);
+    Route::delete('color/delete', [ColorController::class, 'destroy']);
+    Route::put('/color/{id}/{column}', [ColorController::class, 'toggle']);
+    Route::delete('color/force-delete', [ColorController::class, 'forceDelete']);
+    Route::apiResource('color', ColorController::class);
+});
+//////////////////////////////////////// color ////////////////////////////////
+//////////////////////////////////////// color ////////////////////////////////
+
+
+//////////////////////////////////////// unit ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/unit/index', [UnitController::class, 'index']);
+    Route::post('unit/restore', [UnitController::class, 'restore']);
+    Route::delete('unit/delete', [UnitController::class, 'destroy']);
+    Route::put('/unit/{id}/{column}', [UnitController::class, 'toggle']);
+    Route::delete('unit/force-delete', [UnitController::class, 'forceDelete']);
+    Route::apiResource('unit', UnitController::class);
+});
+//////////////////////////////////////// unit ////////////////////////////////
+//////////////////////////////////////// unit ////////////////////////////////
