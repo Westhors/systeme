@@ -14,12 +14,18 @@ class ProductResource extends JsonResource
             'name'            => $this->name,
             'description'     => $this->description,
             'image_url'       => $this->image_url,
-            'category_id'     => $this->category_id,
+
+            'image' => $this->getFirstMediaUrl(),
+
+            'category_id'     => new CategoryResource($this->category),
+            'warehouse_id'    => new WarehouseResource($this->warehouse),
             'sku'             => $this->sku,
             'barcode'         => $this->barcode,
             'stock'           => $this->stock,
             'reorder_level'   => $this->reorder_level,
-
+            'price'           => $this->price,
+            'cost'            => $this->cost,
+            'active'            => $this->active,
             'units'           => ProductUnitResource::collection(
                 $this->whenLoaded('units')
             ),

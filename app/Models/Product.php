@@ -11,7 +11,7 @@ class Product extends BaseModel
     protected $casts = [
         'active' => 'boolean',
     ];
-    
+
     public function units()
     {
         return $this->hasMany(ProductUnit::class);
@@ -20,5 +20,15 @@ class Product extends BaseModel
     public function offers()
     {
         return $this->belongsToMany(Offer::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

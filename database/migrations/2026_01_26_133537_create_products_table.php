@@ -22,9 +22,15 @@ return new class extends Migration
             $table->integer('stock')->default(0);
             $table->integer('reorder_level')->default(0);
             $table->string('image_url')->nullable();
+
             $table->foreignId('category_id')
                 ->constrained('categories')
                 ->cascadeOnDelete();
+
+            $table->foreignId('warehouse_id')
+                ->constrained('warehouses')
+                ->cascadeOnDelete();
+
             $table->boolean('active')->default(true);
 
             $table->softDeletes();
