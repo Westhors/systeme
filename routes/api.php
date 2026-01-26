@@ -20,12 +20,14 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PageSectionController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PolicyController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RefController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServiceController;
@@ -170,3 +172,34 @@ Route::middleware(['admin'])->group(function () {
 });
 //////////////////////////////////////// category ////////////////////////////////
 //////////////////////////////////////// category ////////////////////////////////
+
+
+
+//////////////////////////////////////// product ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/product/index', [ProductController::class, 'index']);
+    Route::post('product/restore', [ProductController::class, 'restore']);
+    Route::delete('product/delete', [ProductController::class, 'destroy']);
+    Route::put('/product/{id}/{column}', [ProductController::class, 'toggle']);
+    Route::delete('product/force-delete', [ProductController::class, 'forceDelete']);
+    Route::apiResource('product', ProductController::class);
+});
+//////////////////////////////////////// product ////////////////////////////////
+//////////////////////////////////////// product ////////////////////////////////
+
+
+
+
+//////////////////////////////////////// offer ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/offer/index', [OfferController::class, 'index']);
+    Route::post('offer/restore', [OfferController::class, 'restore']);
+    Route::delete('offer/delete', [OfferController::class, 'destroy']);
+    Route::put('/offer/{id}/{column}', [OfferController::class, 'toggle']);
+    Route::delete('offer/force-delete', [OfferController::class, 'forceDelete']);
+    Route::apiResource('offer', OfferController::class);
+});
+//////////////////////////////////////// offer ////////////////////////////////
+//////////////////////////////////////// offer ////////////////////////////////
