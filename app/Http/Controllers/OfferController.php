@@ -126,4 +126,36 @@ class OfferController extends BaseController
         }
     }
 
+
+    public function reports()
+    {
+        try {
+            $now = now();
+
+            return JsonResponse::respondSuccess([
+                'total_offers'     => Offer::count(),
+                'active_offers'    => Offer::where('is_active', true)
+                    ->whereRaw(
+                        "CONCAT(start_date, ' ', start_time) <= ?
+                        AND CONCAT(end_date, ' ', end_time) >= ?",
+                        [$now, $now]
+                    )->count(),
+
+                'scheduled_offers' => Offer::whereRaw(
+                    "CONCAT(start_date, ' ', start_time) > ?",
+                    [$now]
+                )->count(),
+
+                'expired_offers'   => Offer::whereRaw(
+                    "CONCAT(end_date, ' ', end_time) < ?",
+                    [$now]
+                )->count(),
+            ]);
+
+        } catch (\Exception $e) {
+            return JsonResponse::respondError($e->getMessage());
+        }
+    }
+
+
 }

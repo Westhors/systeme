@@ -61,6 +61,14 @@ class AdminController extends BaseController
     {
         try {
             $this->crudRepository->update($request->validated(), $admin->id);
+            if (request('logo') !== null) {
+                $network = Admin::find($admin->id);
+                $this->crudRepository->AddMediaCollection('logo', $network, 'logo');
+            }
+             if (request('logo_icon') !== null) {
+                $network = Admin::find($admin->id);
+                $this->crudRepository->AddMediaCollection('logo_icon', $network, 'logo_icon');
+            }
             activity()->performedOn($admin)->withProperties(['attributes' => $admin])->log('update');
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_UPDATED_SUCCESSFULLY));
         } catch (Exception $e) {

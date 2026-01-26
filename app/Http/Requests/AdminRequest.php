@@ -28,6 +28,7 @@ class AdminRequest extends FormRequest
             'phone' => 'nullable',
             'active' => 'nullable|boolean',
             'address' => 'nullable',
+            'website' => 'nullable',
             'tax_id' => 'nullable',
             'commercial_register' => 'nullable',
             'country' => 'nullable',
@@ -36,3 +37,4 @@ class AdminRequest extends FormRequest
         ];
     }
 }
+

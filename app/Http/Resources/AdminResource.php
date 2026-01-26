@@ -19,8 +19,10 @@ class AdminResource extends JsonResource
             'name' => $this->name,
             'name' => $this->name,
             'email' => $this->email,
-            'imageUrl' => $this->getFirstMediaUrl(),
-            'image' => new MediaResource($this->getFirstMedia()),
+            'logoUrl' => $this->getFirstMediaUrl('logo'),
+            'logo' => new MediaResource($this->getFirstMedia('logo')),
+            'logo_icon' => $this->getFirstMediaUrl('logo_icon'),
+            'logo_icon_image' => new MediaResource($this->getFirstMedia('logo_icon')),
             'address' => $this->address,
             'phone' => $this->phone,
             'active' => $this->active,
@@ -32,7 +34,8 @@ class AdminResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
 
-
+            'website' => $this->website,
+            'role' => 'admin',
 
         ];
     }

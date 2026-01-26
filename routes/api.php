@@ -201,5 +201,7 @@ Route::middleware(['admin'])->group(function () {
     Route::delete('offer/force-delete', [OfferController::class, 'forceDelete']);
     Route::apiResource('offer', OfferController::class);
 });
+    Route::get('/offer/reports', [OfferController::class, 'reports']);
+
 //////////////////////////////////////// offer ////////////////////////////////
 //////////////////////////////////////// offer ////////////////////////////////
