@@ -40,28 +40,37 @@ class ProductController extends BaseController
         DB::beginTransaction();
 
         try {
+            $data = $request->validated();
+
             $product = $this->crudRepository->create(
-                collect($request->validated())->except('units')->toArray()
+                collect($data)->except('units')->toArray()
             );
 
-            if (request('image') !== null) {
+            if ($request->hasFile('image')) {
                 $this->crudRepository->AddMediaCollection('image', $product);
             }
 
-            foreach ($request->units as $unitData) {
+            // ✅ تأكد إن units موجودة ومش فاضية
+            if (!empty($data['units']) && is_array($data['units'])) {
 
-                $productUnit = $product->units()->create([
-                    'unit_id'     => $unitData['unit_id'],
-                    'cost_price'  => $unitData['cost_price'],
-                    'sell_price'  => $unitData['sell_price'],
-                    'barcode'     => $unitData['barcode'] ?? null,
-                ]);
+                foreach ($data['units'] as $unitData) {
 
-                foreach ($unitData['colors'] as $colorData) {
-                    $productUnit->colors()->create([
-                        'color_id' => $colorData['color_id'],
-                        'stock'    => $colorData['stock'],
+                    $productUnit = $product->units()->create([
+                        'unit_id'     => $unitData['unit_id'],
+                        'cost_price'  => $unitData['cost_price'],
+                        'sell_price'  => $unitData['sell_price'],
+                        'barcode'     => $unitData['barcode'] ?? null,
                     ]);
+
+                    // ✅ تأكد إن colors موجودة
+                    if (!empty($unitData['colors']) && is_array($unitData['colors'])) {
+                        foreach ($unitData['colors'] as $colorData) {
+                            $productUnit->colors()->create([
+                                'color_id' => $colorData['color_id'],
+                                'stock'    => $colorData['stock'],
+                            ]);
+                        }
+                    }
                 }
             }
 
@@ -74,6 +83,7 @@ class ProductController extends BaseController
             return JsonResponse::respondError($e->getMessage());
         }
     }
+
 
     public function show(Product $product): ?\Illuminate\Http\JsonResponse
     {
@@ -90,41 +100,50 @@ class ProductController extends BaseController
         DB::beginTransaction();
 
         try {
+            $data = $request->validated();
+
             $this->crudRepository->update(
-                collect($request->validated())->except('units')->toArray(),
+                collect($data)->except('units')->toArray(),
                 $product->id
             );
 
-            if (request('image') !== null) {
+            if ($request->hasFile('image')) {
                 $network = Product::find($product->id);
                 $this->crudRepository->AddMediaCollection('image', $network);
             }
 
+            // حذف القديم
             $product->units()->each(function ($unit) {
                 $unit->colors()->delete();
                 $unit->delete();
             });
 
-            foreach ($request->units as $unitData) {
+            // ✅ تأكد إن units موجودة
+            if (!empty($data['units']) && is_array($data['units'])) {
 
-                $productUnit = $product->units()->create([
-                    'unit_id'     => $unitData['unit_id'],
-                    'cost_price'  => $unitData['cost_price'],
-                    'sell_price'  => $unitData['sell_price'],
-                    'barcode'     => $unitData['barcode'] ?? null,
-                ]);
+                foreach ($data['units'] as $unitData) {
 
-                foreach ($unitData['colors'] as $colorData) {
-                    $productUnit->colors()->create([
-                        'color_id' => $colorData['color_id'],
-                        'stock'    => $colorData['stock'],
+                    $productUnit = $product->units()->create([
+                        'unit_id'     => $unitData['unit_id'],
+                        'cost_price'  => $unitData['cost_price'],
+                        'sell_price'  => $unitData['sell_price'],
+                        'barcode'     => $unitData['barcode'] ?? null,
                     ]);
+
+                    if (!empty($unitData['colors']) && is_array($unitData['colors'])) {
+                        foreach ($unitData['colors'] as $colorData) {
+                            $productUnit->colors()->create([
+                                'color_id' => $colorData['color_id'],
+                                'stock'    => $colorData['stock'],
+                            ]);
+                        }
+                    }
                 }
             }
 
             activity()
                 ->performedOn($product)
-                ->withProperties(['attributes' => $request->validated()])
+                ->withProperties(['attributes' => $data])
                 ->log('update');
 
             DB::commit();
@@ -139,6 +158,7 @@ class ProductController extends BaseController
             return JsonResponse::respondError($e->getMessage());
         }
     }
+
 
 
     public function destroy(Request $request): ?\Illuminate\Http\JsonResponse
