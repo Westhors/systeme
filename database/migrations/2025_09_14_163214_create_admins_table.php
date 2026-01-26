@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->boolean('active')->default(true);
             $table->string('address')->nullable();
+            $table->string('website')->nullable();
             $table->string('password')->nullable();
             $table->string('tax_id')->nullable();
             $table->string('commercial_register')->nullable();
