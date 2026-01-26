@@ -2,10 +2,19 @@
 
 namespace App\Models;
 
+use App\Traits\HasMedia;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class Product extends BaseModel
 {
+    use HasFactory, Notifiable , HasMedia;
+
+    protected $with = [
+        'media',
+    ];
+
     protected $guarded = ['id'];
 
     protected $casts = [
