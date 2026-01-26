@@ -44,6 +44,10 @@ class ProductController extends BaseController
                 collect($request->validated())->except('units')->toArray()
             );
 
+            if (request('image') !== null) {
+                $this->crudRepository->AddMediaCollection('image', $product);
+            }
+
             foreach ($request->units as $unitData) {
 
                 $productUnit = $product->units()->create([
@@ -90,6 +94,11 @@ class ProductController extends BaseController
                 collect($request->validated())->except('units')->toArray(),
                 $product->id
             );
+
+            if (request('image') !== null) {
+                $network = Product::find($product->id);
+                $this->crudRepository->AddMediaCollection('image', $network);
+            }
 
             $product->units()->each(function ($unit) {
                 $unit->colors()->delete();
