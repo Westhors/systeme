@@ -38,8 +38,8 @@ class AdminController extends BaseController
     {
         try {
             $admin = $this->crudRepository->create($request->validated());
-            if (request('image') !== null) {
-                $this->crudRepository->AddMediaCollection('image', $admin);
+            if (request('logo') !== null) {
+                $this->crudRepository->AddMediaCollection('logo', $admin,'logo');
             }
             return new AdminResource($admin);
         } catch (Exception $e) {

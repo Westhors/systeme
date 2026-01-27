@@ -46,10 +46,6 @@ class ProductController extends BaseController
                 collect($data)->except('units')->toArray()
             );
 
-            if ($request->hasFile('product_image')) {
-                $this->crudRepository->AddMediaCollection('product_image', $product , 'product_image');
-            }
-
             // ✅ تأكد إن units موجودة ومش فاضية
             if (!empty($data['units']) && is_array($data['units'])) {
 
@@ -74,6 +70,9 @@ class ProductController extends BaseController
                 }
             }
 
+           if (request('image') !== null) {
+                $this->crudRepository->AddMediaCollection('image', $product);
+            }
             DB::commit();
 
             return new ProductResource($product->load('units.colors'));
