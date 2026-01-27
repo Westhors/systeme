@@ -15,6 +15,7 @@ use App\Http\Controllers\ExpoCompanyController;
 use App\Http\Controllers\ExpoController;
 use App\Http\Controllers\FAQController;
 use App\Http\Controllers\GuideLineController;
+use App\Http\Controllers\InventoryLogController;
 use App\Http\Controllers\LogoCompanyController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MenuController;
@@ -132,6 +133,10 @@ Route::middleware(['admin'])->group(function () {
 //////////////////////////////////////// warehouse ////////////////////////////////
 //////////////////////////////////////// warehouse ////////////////////////////////
 
+Route::get('warehouses/{warehouse}/products', [WarehouseController::class, 'warehouseProducts']);
+Route::post('warehouses/transfer', [WarehouseController::class, 'transfer']);
+Route::post('warehouses/inventory-store', [WarehouseController::class, 'inventoryStore']);
+Route::post('/inventory/index', [InventoryLogController::class, 'index']);
 
 //////////////////////////////////////// color ////////////////////////////////
 
