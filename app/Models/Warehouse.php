@@ -23,4 +23,12 @@ class Warehouse extends BaseModel
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class)
+            ->withPivot(['stock', 'cost'])
+            ->withTimestamps();
+    }
+
 }
