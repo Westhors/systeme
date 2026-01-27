@@ -46,8 +46,8 @@ class ProductController extends BaseController
                 collect($data)->except('units')->toArray()
             );
 
-            if ($request->hasFile('image')) {
-                $this->crudRepository->AddMediaCollection('image', $product);
+            if ($request->hasFile('product_image')) {
+                $this->crudRepository->AddMediaCollection('product_image', $product , 'product_image');
             }
 
             // ✅ تأكد إن units موجودة ومش فاضية
@@ -107,9 +107,9 @@ class ProductController extends BaseController
                 $product->id
             );
 
-            if ($request->hasFile('image')) {
+            if ($request->hasFile('product_image')) {
                 $network = Product::find($product->id);
-                $this->crudRepository->AddMediaCollection('image', $network);
+                $this->crudRepository->AddMediaCollection('product_image', $network , 'product_image');
             }
 
             // حذف القديم
