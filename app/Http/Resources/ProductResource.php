@@ -13,10 +13,11 @@ class ProductResource extends JsonResource
             'id'              => $this->id,
             'name'            => $this->name,
             'description'     => $this->description,
-            'image_url'       => $this->image_url,
+             'image_url'       => $this->image_url,
 
-            'productImageUrl' => $this->getFirstMediaUrlTeam('product_image'),
-            'productImage' => new MediaResource($this->getFirstMedia('product_image')),
+            'imageUrl' => $this->getFirstMediaUrlTeam(),
+            'image' => new MediaResource($this->getFirstMedia()),
+
             'category_id'     => new CategoryResource($this->category),
             'warehouse_id'    => new WarehouseResource($this->warehouse),
             'sku'             => $this->sku,
