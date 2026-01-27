@@ -10,29 +10,34 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'              => $this->id,
-            'name'            => $this->name,
-            'description'     => $this->description,
-             'image_url'       => $this->image_url,
+            'id'            => $this->id,
+            'name'          => $this->name,
+            'description'   => $this->description,
+            'image_url'     => $this->image_url,
 
             'imageUrl' => $this->getFirstMediaUrlTeam(),
-            'image' => new MediaResource($this->getFirstMedia()),
+            'image'    => new MediaResource($this->getFirstMedia()),
 
-            'category_id'     => new CategoryResource($this->category),
-            'warehouse_id'    => new WarehouseResource($this->warehouse),
-            'sku'             => $this->sku,
-            'barcode'         => $this->barcode,
-            'stock'           => $this->stock,
-            'reorder_level'   => $this->reorder_level,
-            'price'           => $this->price,
-            'cost'            => $this->cost,
-            'active'            => $this->active,
-            'units'           => ProductUnitResource::collection(
+            'category'      => new CategoryResource($this->category),
+
+            'sku'           => $this->sku,
+            'barcode'       => $this->barcode,
+
+            // 👇 الكمية من المخزن
+            'stock'         => $this->pivot->stock ?? 0,
+
+            'reorder_level' => $this->reorder_level,
+            'price'         => $this->price,
+            'cost'          => $this->cost,
+            'active'        => $this->active,
+
+            'units' => ProductUnitResource::collection(
                 $this->whenLoaded('units')
             ),
 
-            'created_at'      => $this->created_at,
-            'updated_at'      => $this->updated_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }
+

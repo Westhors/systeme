@@ -28,7 +28,7 @@ class OfferRequest extends FormRequest
             'end_date'        => 'required|date|after_or_equal:start_date',
             'end_time'        => 'required|date_format:H:i',
 
-            'is_active'       => 'boolean',
+            'active'       => 'boolean',
 
             'product_ids'     => 'required|array|min:1',
             'product_ids.*'   => 'exists:products,id',
