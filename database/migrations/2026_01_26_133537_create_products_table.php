@@ -27,10 +27,6 @@ return new class extends Migration
                 ->constrained('categories')
                 ->cascadeOnDelete();
 
-            $table->foreignId('warehouse_id')
-                ->constrained('warehouses')
-                ->cascadeOnDelete();
-
             $table->boolean('active')->default(true);
 
             $table->softDeletes();

@@ -19,7 +19,6 @@ class ProductRequest extends FormRequest
             'description'     => 'nullable|string',
             'image_url'       => 'nullable|string',
             'category_id'     => 'required|exists:categories,id',
-            'warehouse_id'    => 'required|exists:warehouses,id',
             'sku'             => 'nullable|string|unique:products,sku',
             'barcode'         => 'nullable|string|unique:products,barcode',
             'stock'           => 'nullable|integer|min:0',
