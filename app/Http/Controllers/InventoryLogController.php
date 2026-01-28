@@ -94,4 +94,42 @@ class InventoryLogController extends BaseController
             ], 422);
         }
     }
+
+
+    public function indexProduct(Request $request)
+    {
+        try {
+            // جلب كل البيانات من الجدول
+            $items = DB::table('product_warehouse')
+                ->join('products', 'product_warehouse.product_id', '=', 'products.id')
+                ->join('warehouses', 'product_warehouse.warehouse_id', '=', 'warehouses.id')
+                ->select(
+                    'product_warehouse.id',
+                    'products.name as product_name',
+                    'warehouses.name as warehouse_name',
+                    'product_warehouse.stock',
+                    'product_warehouse.cost',
+                    'product_warehouse.created_at',
+                    'product_warehouse.updated_at'
+                )
+                ->orderBy('id', 'asc')
+                ->get();
+
+            // ريسبونس JSON
+            return response()->json([
+                'data' => $items,
+                'result' => 'Success',
+                'message' => 'Product warehouse list fetched successfully',
+                'status' => 200,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'Error',
+                'message' => $e->getMessage(),
+                'status' => 500,
+            ], 500);
+        }
+    }
+
 }

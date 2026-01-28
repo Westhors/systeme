@@ -3,19 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\JsonResponse;
-use App\Http\Requests\CategoryRequest;
-use App\Http\Resources\CategoryResource;
-use App\Interfaces\CategoryRepositoryInterface;
-use App\Models\Category;
+use App\Http\Requests\CustomerRequest;
+use App\Http\Resources\CustomerResource;
+use App\Interfaces\CustomerRepositoryInterface;
+use App\Models\Customer;
 use Exception;
 use Illuminate\Http\Request;
 
-class CategoryController extends BaseController
+class CustomerController extends BaseController
 {
 
     protected mixed $crudRepository;
 
-    public function __construct(CategoryRepositoryInterface $pattern)
+    public function __construct(CustomerRepositoryInterface $pattern)
     {
         $this->crudRepository = $pattern;
     }
@@ -23,58 +23,42 @@ class CategoryController extends BaseController
     public function index()
     {
         try {
-            $category = CategoryResource::collection($this->crudRepository->all(
+            $customer = CustomerResource::collection($this->crudRepository->all(
                 [],
                 [],
                 ['*']
             ));
-            return $category->additional(JsonResponse::success());
+            return $customer->additional(JsonResponse::success());
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
-    public function indexSubAccount()
+    public function store(CustomerRequest $request)
     {
         try {
-
-            $categories = Category::whereNotNull('parent_id')
-                ->get();
-
-            return CategoryResource::collection($categories)
-                ->additional(JsonResponse::success());
-
+            $customer = $this->crudRepository->create($request->validated());
+            return new CustomerResource($customer);
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
-
-    public function store(CategoryRequest $request)
+    public function show(Customer $customer): ?\Illuminate\Http\JsonResponse
     {
         try {
-            $category = $this->crudRepository->create($request->validated());
-            return new CategoryResource($category);
-        } catch (Exception $e) {
-            return JsonResponse::respondError($e->getMessage());
-        }
-    }
-
-    public function show(Category $category): ?\Illuminate\Http\JsonResponse
-    {
-        try {
-            return JsonResponse::respondSuccess('Item Fetched Successfully', new CategoryResource($category));
+            return JsonResponse::respondSuccess('Item Fetched Successfully', new CustomerResource($customer));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
 
-    public function update(CategoryRequest $request, Category $category)
+    public function update(CustomerRequest $request, Customer $customer)
     {
         try {
-            $this->crudRepository->update($request->validated(), $category->id);
-            activity()->performedOn($category)->withProperties(['attributes' => $category])->log('update');
+            $this->crudRepository->update($request->validated(), $customer->id);
+            activity()->performedOn($customer)->withProperties(['attributes' => $customer])->log('update');
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_UPDATED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
@@ -85,7 +69,7 @@ class CategoryController extends BaseController
     public function destroy(Request $request): ?\Illuminate\Http\JsonResponse
     {
         try {
-            $this->crudRepository->deleteRecords('categories', $request['items']);
+            $this->crudRepository->deleteRecords('customers', $request['items']);
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_DELETED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
@@ -95,7 +79,7 @@ class CategoryController extends BaseController
     public function restore(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            $this->crudRepository->restoreItem(Category::class, $request['items']);
+            $this->crudRepository->restoreItem(Customer::class, $request['items']);
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_RESTORED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
@@ -108,7 +92,7 @@ class CategoryController extends BaseController
     public function forceDelete(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            $this->crudRepository->deleteRecordsFinial(Category::class, $request['items']);
+            $this->crudRepository->deleteRecordsFinial(Customer::class, $request['items']);
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_FORCE_DELETED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
