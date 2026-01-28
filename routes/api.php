@@ -9,6 +9,7 @@ use App\Http\Controllers\ColorController;
 use App\Http\Controllers\ContactPeopleController;
 use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\CountryController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ExpoCompanyController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\ExpoController;
 use App\Http\Controllers\FAQController;
 use App\Http\Controllers\GuideLineController;
 use App\Http\Controllers\InventoryLogController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LogoCompanyController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MenuController;
@@ -137,6 +139,7 @@ Route::get('warehouses/{warehouse}/products', [WarehouseController::class, 'ware
 Route::post('warehouses/transfer', [WarehouseController::class, 'transfer']);
 Route::post('warehouses/inventory-store', [WarehouseController::class, 'inventoryStore']);
 Route::post('/inventory/index', [InventoryLogController::class, 'index']);
+Route::post('/warehouses/index-product', [InventoryLogController::class, 'indexProduct']);
 
 //////////////////////////////////////// color ////////////////////////////////
 
@@ -175,6 +178,8 @@ Route::middleware(['admin'])->group(function () {
     Route::delete('category/force-delete', [CategoryController::class, 'forceDelete']);
     Route::apiResource('category', CategoryController::class);
 });
+    Route::get('/index-sub-account', [CategoryController::class, 'indexSubAccount']);
+
 //////////////////////////////////////// category ////////////////////////////////
 //////////////////////////////////////// category ////////////////////////////////
 
@@ -210,3 +215,20 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// offer ////////////////////////////////
 //////////////////////////////////////// offer ////////////////////////////////
+
+
+//////////////////////////////////////// customer ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/customer/index', [CustomerController::class, 'index']);
+    Route::post('customer/restore', [CustomerController::class, 'restore']);
+    Route::delete('customer/delete', [CustomerController::class, 'destroy']);
+    Route::put('/customer/{id}/{column}', [CustomerController::class, 'toggle']);
+    Route::delete('customer/force-delete', [CustomerController::class, 'forceDelete']);
+    Route::apiResource('customer', CustomerController::class);
+});
+//////////////////////////////////////// customer ////////////////////////////////
+//////////////////////////////////////// customer ////////////////////////////////
+
+
+    Route::post('/invoice/store', [InvoiceController::class, 'store']);

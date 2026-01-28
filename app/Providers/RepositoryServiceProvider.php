@@ -6,6 +6,7 @@ use App\Interfaces\AdminRepositoryInterface;
 use App\Interfaces\BranchRepositoryInterface;
 use App\Interfaces\CategoryRepositoryInterface;
 use App\Interfaces\ColorRepositoryInterface;
+use App\Interfaces\CustomerRepositoryInterface;
 use App\Interfaces\InventoryRepositoryInterface;
 use App\Interfaces\OfferRepositoryInterface;
 use App\Interfaces\ProductRepositoryInterface;
@@ -16,6 +17,7 @@ use App\Repositories\AdminRepository;
 use App\Repositories\BranchRepository;
 use App\Repositories\CategoryRepository;
 use App\Repositories\ColorRepository;
+use App\Repositories\CustomerRepository;
 use App\Repositories\InventoryRepository;
 use App\Repositories\OfferRepository;
 use App\Repositories\ProductRepository;
@@ -41,6 +43,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
         $this->app->bind(OfferRepositoryInterface::class, OfferRepository::class);
         $this->app->bind(InventoryRepositoryInterface::class, InventoryRepository::class);
+        $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
 
     }
 
