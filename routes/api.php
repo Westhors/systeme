@@ -233,6 +233,7 @@ Route::middleware(['admin'])->group(function () {
 
     Route::post('/invoice/store', [InvoiceController::class, 'store']);
     Route::post('/invoice-return/store', [ReturnInvoiceController::class, 'storeReturn']);
+    Route::get('/invoices/search', [InvoiceController::class, 'searchByInvoiceNumber']);
 
 //////////////////////////////////////// return ////////////////////////////////
 //////////////////////////////////////// return ////////////////////////////////

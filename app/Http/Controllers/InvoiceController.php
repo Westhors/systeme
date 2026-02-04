@@ -76,4 +76,38 @@ class InvoiceController extends Controller
 }
 
 
+    public function searchByInvoiceNumber(Request $request)
+    {
+        $request->validate([
+            'invoice_number' => 'required|string'
+        ]);
+
+        try {
+            $invoice = Invoice::with(['items.product', 'customer'])
+                ->where('invoice_number', $request->invoice_number)
+                ->first();
+
+            if (!$invoice) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => "لا توجد فاتورة برقم {$request->invoice_number}"
+                ], 404);
+            }
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'تم العثور على الفاتورة',
+                'data'    => $invoice
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'حدث خطأ أثناء البحث',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 }
