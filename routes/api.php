@@ -32,6 +32,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PolicyController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RefController;
+use App\Http\Controllers\ReturnInvoiceController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SettingController;
@@ -230,5 +231,8 @@ Route::middleware(['admin'])->group(function () {
 //////////////////////////////////////// customer ////////////////////////////////
 //////////////////////////////////////// customer ////////////////////////////////
 
-
     Route::post('/invoice/store', [InvoiceController::class, 'store']);
+    Route::post('/invoice-return/store', [ReturnInvoiceController::class, 'storeReturn']);
+
+//////////////////////////////////////// return ////////////////////////////////
+//////////////////////////////////////// return ////////////////////////////////
