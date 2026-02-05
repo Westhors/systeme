@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CityController;
@@ -10,7 +11,9 @@ use App\Http\Controllers\ContactPeopleController;
 use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DeleveryManController;
 use App\Http\Controllers\EmailTemplateController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ExpoCompanyController;
 use App\Http\Controllers\ExpoController;
@@ -34,6 +37,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RefController;
 use App\Http\Controllers\ReturnInvoiceController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SalesRepresentativeController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SliderController;
@@ -231,6 +235,9 @@ Route::middleware(['admin'])->group(function () {
 //////////////////////////////////////// customer ////////////////////////////////
 //////////////////////////////////////// customer ////////////////////////////////
 
+//////////////////////////////////////// invoice ////////////////////////////////
+//////////////////////////////////////// invoice ////////////////////////////////
+
     Route::post('/invoice/store', [InvoiceController::class, 'store']);
     Route::post('/invoice-return/store', [ReturnInvoiceController::class, 'storeReturn']);
     Route::get('/invoices/search', [InvoiceController::class, 'searchByInvoiceNumber']);
@@ -239,3 +246,67 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// invoice ////////////////////////////////
 //////////////////////////////////////// invoice ////////////////////////////////
+
+
+
+
+
+//////////////////////////////////////// Employee ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/employee/index', [EmployeeController::class, 'index']);
+    Route::post('employee/restore', [EmployeeController::class, 'restore']);
+    Route::delete('employee/delete', [EmployeeController::class, 'destroy']);
+    Route::put('/employee/{id}/{column}', [EmployeeController::class, 'toggle']);
+    Route::delete('employee/force-delete', [EmployeeController::class, 'forceDelete']);
+    Route::apiResource('employee', EmployeeController::class);
+});
+//////////////////////////////////////// Employee ////////////////////////////////
+//////////////////////////////////////// Employee ////////////////////////////////
+
+
+
+//////////////////////////////////////// SalesRepresentative ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/sales-representative/index', [SalesRepresentativeController::class, 'index']);
+    Route::post('sales-representative/restore', [SalesRepresentativeController::class, 'restore']);
+    Route::delete('sales-representative/delete', [SalesRepresentativeController::class, 'destroy']);
+    Route::put('/sales-representative/{id}/{column}', [SalesRepresentativeController::class, 'toggle']);
+    Route::delete('sales-representative/force-delete', [SalesRepresentativeController::class, 'forceDelete']);
+    Route::apiResource('sales-representative', SalesRepresentativeController::class);
+});
+//////////////////////////////////////// SalesRepresentative ////////////////////////////////
+//////////////////////////////////////// SalesRepresentative ////////////////////////////////
+
+
+
+//////////////////////////////////////// DeleveryMan ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/delevery-man/index', [DeleveryManController::class, 'index']);
+    Route::post('delevery-man/restore', [DeleveryManController::class, 'restore']);
+    Route::delete('delevery-man/delete', [DeleveryManController::class, 'destroy']);
+    Route::put('/delevery-man/{id}/{column}', [DeleveryManController::class, 'toggle']);
+    Route::delete('delevery-man/force-delete', [DeleveryManController::class, 'forceDelete']);
+    Route::apiResource('delevery-man', DeleveryManController::class);
+});
+//////////////////////////////////////// DeleveryMan ////////////////////////////////
+//////////////////////////////////////// DeleveryMan ////////////////////////////////
+
+
+//////////////////////////////////////// Attendance ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/attendance/index', [AttendanceController::class, 'index']);
+    Route::post('attendance/restore', [AttendanceController::class, 'restore']);
+    Route::delete('attendance/delete', [AttendanceController::class, 'destroy']);
+    Route::put('/attendance/{id}/{column}', [AttendanceController::class, 'toggle']);
+    Route::delete('attendance/force-delete', [AttendanceController::class, 'forceDelete']);
+    Route::apiResource('attendance', AttendanceController::class);
+});
+//////////////////////////////////////// Attendance ////////////////////////////////
+//////////////////////////////////////// Attendance ////////////////////////////////
+
+
+

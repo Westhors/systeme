@@ -3,24 +3,32 @@
 namespace App\Providers;
 
 use App\Interfaces\AdminRepositoryInterface;
+use App\Interfaces\AttendanceRepositoryInterface;
 use App\Interfaces\BranchRepositoryInterface;
 use App\Interfaces\CategoryRepositoryInterface;
 use App\Interfaces\ColorRepositoryInterface;
 use App\Interfaces\CustomerRepositoryInterface;
+use App\Interfaces\DeleveryManRepositoryInterface;
+use App\Interfaces\EmployeeRepositoryInterface;
 use App\Interfaces\InventoryRepositoryInterface;
 use App\Interfaces\OfferRepositoryInterface;
 use App\Interfaces\ProductRepositoryInterface;
+use App\Interfaces\SalesRepresentativeRepositoryInterface;
 use App\Interfaces\UnitRepositoryInterface;
 use App\Interfaces\UserRepositoryInterface;
 use App\Interfaces\WarehouseRepositoryInterface;
 use App\Repositories\AdminRepository;
+use App\Repositories\AttendanceRepository;
 use App\Repositories\BranchRepository;
 use App\Repositories\CategoryRepository;
 use App\Repositories\ColorRepository;
 use App\Repositories\CustomerRepository;
+use App\Repositories\DeleveryManRepository;
+use App\Repositories\EmployeeRepository;
 use App\Repositories\InventoryRepository;
 use App\Repositories\OfferRepository;
 use App\Repositories\ProductRepository;
+use App\Repositories\SalesRepresentativeRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\WarehouseRepository;
@@ -44,7 +52,10 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(OfferRepositoryInterface::class, OfferRepository::class);
         $this->app->bind(InventoryRepositoryInterface::class, InventoryRepository::class);
         $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
-
+        $this->app->bind(EmployeeRepositoryInterface::class, EmployeeRepository::class);
+        $this->app->bind(SalesRepresentativeRepositoryInterface::class, SalesRepresentativeRepository::class);
+        $this->app->bind(AttendanceRepositoryInterface::class, AttendanceRepository::class);
+        $this->app->bind(DeleveryManRepositoryInterface::class, DeleveryManRepository::class);
     }
 
     /**
