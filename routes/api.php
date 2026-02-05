@@ -305,6 +305,8 @@ Route::middleware(['admin'])->group(function () {
     Route::delete('attendance/force-delete', [AttendanceController::class, 'forceDelete']);
     Route::apiResource('attendance', AttendanceController::class);
 });
+Route::post('/attendance/import', [AttendanceController::class, 'importAttendance']);
+
 //////////////////////////////////////// Attendance ////////////////////////////////
 //////////////////////////////////////// Attendance ////////////////////////////////
 
