@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Helpers\JsonResponse;
 use App\Http\Requests\AttendanceRequest;
 use App\Http\Resources\AttendanceResource;
+use App\Imports\AttendanceImport;
 use App\Interfaces\AttendanceRepositoryInterface;
 use App\Models\Attendance;
 use Exception;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AttendanceController extends BaseController
 {
@@ -96,6 +98,30 @@ class AttendanceController extends BaseController
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_FORCE_DELETED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
+        }
+    }
+
+
+    public function importAttendance(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        try {
+            Excel::import(new AttendanceImport, $request->file('file'));
+
+            return response()->json([
+                'status' => true,
+                'message' => 'تم استيراد ملف الحضور بنجاح'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'حدث خطأ أثناء الاستيراد',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
