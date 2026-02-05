@@ -10,15 +10,15 @@ class AttendanceResource extends JsonResource
     {
         return [
             'id'         => $this->id,
-            'date'       => $this->date?->format('Y-m-d'),
-
             'employee' => [
                 'name' => $this->employee?->name,
                 'employee_code'   => $this->employee?->id,
             ],
+            'date'       => $this->date?->format('Y-m-d'),
 
-            'check_in'   => $this->check_in,
-            'check_out'  => $this->check_out,
+
+            'check_in'   => $this->check_in?->format('H:i:s'),
+            'check_out'  => $this->check_out?->format('H:i:s'),
             'status'     => $this->status,
 
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
