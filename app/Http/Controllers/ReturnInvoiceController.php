@@ -108,5 +108,101 @@ class ReturnInvoiceController extends Controller
         }
     }
 
+    public function invoiceReturnIndex(Request $request)
+    {
+        try {
+            $filters = $request->input('filters', []);
+            $orderBy = $request->input('orderBy', 'id');
+            $orderByDirection = $request->input('orderByDirection', 'desc');
+            $perPage = $request->input('perPage', 10);
+            $paginate = $request->boolean('paginate', true);
+
+            $query = ReturnInvoice::with(['invoice.customer']);
+
+            // =========================
+            // FILTERS
+            // =========================
+
+            if (!empty($filters['return_number'])) {
+                $query->where('return_number', 'like', '%' . $filters['return_number'] . '%');
+            }
+
+            if (!empty($filters['invoice_number'])) {
+                $query->whereHas('invoice', function ($q) use ($filters) {
+                    $q->where('invoice_number', 'like', '%' . $filters['invoice_number'] . '%');
+                });
+            }
+
+            if (!empty($filters['refund_method'])) {
+                $query->where('refund_method', $filters['refund_method']);
+            }
+
+            if (!empty($filters['date_from'])) {
+                $query->whereDate('created_at', '>=', $filters['date_from']);
+            }
+
+            if (!empty($filters['date_to'])) {
+                $query->whereDate('created_at', '<=', $filters['date_to']);
+            }
+
+            // =========================
+            // SORT
+            // =========================
+            $query->orderBy($orderBy, $orderByDirection);
+
+            // =========================
+            // PAGINATION MODE
+            // =========================
+            if ($paginate) {
+                $returns = $query->paginate($perPage);
+
+                return response()->json([
+                    'data' => ReturnInvoiceResource::collection($returns->items()),
+                    'links' => [
+                        'first' => $returns->url(1),
+                        'last' => $returns->url($returns->lastPage()),
+                        'prev' => $returns->previousPageUrl(),
+                        'next' => $returns->nextPageUrl(),
+                    ],
+                    'meta' => [
+                        'current_page' => $returns->currentPage(),
+                        'from' => $returns->firstItem(),
+                        'last_page' => $returns->lastPage(),
+                        'path' => $returns->path(),
+                        'per_page' => $returns->perPage(),
+                        'to' => $returns->lastItem(),
+                        'total' => $returns->total(),
+                    ],
+                    'result' => 'Success',
+                    'message' => 'Return invoices fetched successfully',
+                    'status' => 200,
+                ]);
+            }
+
+            // =========================
+            // NON PAGINATED MODE
+            // =========================
+            $returns = $query->get();
+
+            return response()->json([
+                'data' => ReturnInvoiceResource::collection($returns),
+                'links' => null,
+                'meta' => null,
+                'result' => 'Success',
+                'message' => 'Return invoices fetched successfully',
+                'status' => 200,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'Error',
+                'message' => $e->getMessage(),
+                'status' => 500,
+            ], 500);
+        }
+    }
+
+
+
 
 }
