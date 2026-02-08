@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('customers', function (Blueprint $table) {
+        Schema::create('loyalty_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
-            $table->string('address')->nullable();
-            $table->string('phone')->nullable();
-            $table->integer('point')->nullable();
-            $table->integer('last_paid_amount')->nullable();
+            $table->integer('points')->default(0);
+            $table->decimal('point_value', 8, 2)->default(1); // كل نقطة قيمتها 1 افتراضي
+            $table->integer('silver')->default(0);
+            $table->integer('gold')->default(0);
+            $table->integer('platinum')->default(0);
             $table->softDeletes();
             $table->timestamps();
         });
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('customers');
+        Schema::dropIfExists('loyalty_settings');
     }
 };
