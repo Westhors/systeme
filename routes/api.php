@@ -39,6 +39,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RefController;
 use App\Http\Controllers\ReturnInvoiceController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SalesInvoiceController;
 use App\Http\Controllers\SalesRepresentativeController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SettingController;
@@ -357,3 +358,15 @@ Route::middleware(['admin'])->group(function () {
 });
 //////////////////////////////////////// tax ////////////////////////////////
 //////////////////////////////////////// tax ////////////////////////////////
+
+
+
+
+
+//////////////////////////////////////// SalesInvoice ////////////////////////////////
+//////////////////////////////////////// SalesInvoice ////////////////////////////////
+    Route::post('/sales-invoice/store', [SalesInvoiceController::class, 'store']);
+    Route::post('/sales-invoices/index', [SalesInvoiceController::class, 'invoiceIndex']);
+    Route::get('/sales-invoices/{id}', [SalesInvoiceController::class, 'show']);
+//////////////////////////////////////// SalesInvoice ////////////////////////////////
+//////////////////////////////////////// SalesInvoice ////////////////////////////////
