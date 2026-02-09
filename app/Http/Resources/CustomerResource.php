@@ -12,14 +12,17 @@ class CustomerResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray($request): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
             'address' => $this->address,
             'phone' => $this->phone,
-            'point' => $this->point,
+            'point' => $this->point, // أي نقاط يدوية موجودة
+            'last_paid_amount' => $this->last_paid_amount,
+            // 'total_invoices_amount' => $this->total_invoices_amount,
+            // 'loyalty_points' => $this->loyalty_points, // النقاط المحسوبة تلقائياً
         ];
     }
 }

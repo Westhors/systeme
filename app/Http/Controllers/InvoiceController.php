@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\InvoiceResource;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
+use App\Models\LoyaltySetting;
 use App\Models\Product;
 use App\Models\ReturnInvoice;
 use Illuminate\Http\Request;
@@ -109,14 +111,10 @@ class InvoiceController extends Controller
 
    public function store(Request $request)
     {
-        DB::beginTransaction();
+            DB::beginTransaction();
 
         try {
-
-            $total = collect($request->items)->sum(fn ($item) =>
-                $item['price'] * $item['quantity']
-            );
-
+            $total = collect($request->items)->sum(fn ($item) => $item['price'] * $item['quantity']);
             $paid = collect($request->payments)->sum('amount');
 
             $invoice = Invoice::create([
@@ -128,12 +126,9 @@ class InvoiceController extends Controller
             ]);
 
             foreach ($request->items as $item) {
-
-                $product = Product::findOrFail($item['product_id']);
-
                 $invoice->items()->create([
-                    'product_id'   => $product->id,
-                    'product_name' => $product->name,
+                    'product_id'   => $item['product_id'],
+                    'product_name' => $item['product_name'] ?? 'Product',
                     'color'        => $item['color'] ?? null,
                     'size'         => $item['size'] ?? null,
                     'quantity'     => $item['quantity'],
@@ -149,6 +144,22 @@ class InvoiceController extends Controller
                 ]);
             }
 
+            // تحديث نقاط الولاء للعميل على أساس المبلغ المدفوع فقط
+            $loyaltySetting = LoyaltySetting::first();
+            if ($loyaltySetting && $loyaltySetting->point_value > 0) {
+                $customer = Customer::find($request->customer_id);
+
+                // عدد النقاط = المبلغ المدفوع ÷ قيمة النقطة
+                $earnedPoints = floor($paid / $loyaltySetting->point_value);
+
+                // تحديث النقاط
+                $customer->point = ($customer->point ?? 0) + $earnedPoints;
+
+                // حفظ المبلغ المدفوع فقط للمشتريات الأخيرة (اختياري)
+                $customer->last_paid_amount = $paid; // لو عندك حقل last_paid_amount
+                $customer->save();
+            }
+
             DB::commit();
 
             return response()->json([
@@ -160,9 +171,7 @@ class InvoiceController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-
             DB::rollBack();
-
             return response()->json([
                 'status'  => false,
                 'message' => $e->getMessage(),

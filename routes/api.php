@@ -22,6 +22,7 @@ use App\Http\Controllers\GuideLineController;
 use App\Http\Controllers\InventoryLogController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LogoCompanyController;
+use App\Http\Controllers\LoyaltySettingController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuItemController;
@@ -312,3 +313,15 @@ Route::post('/attendance/import', [AttendanceController::class, 'importAttendanc
 
 
 
+//////////////////////////////////////// LoyaltySetting ////////////////////////////////
+//////////////////////////////////////// LoyaltySetting ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/loyalty-points/index', [LoyaltySettingController::class, 'index']);
+    Route::post('/loyalty-points/restore', [LoyaltySettingController::class, 'restore']); // لو عايز soft delete
+    Route::delete('/loyalty-points/delete', [LoyaltySettingController::class, 'destroy']);
+    Route::put('/loyalty-points/{id}/{level}', [LoyaltySettingController::class, 'toggleLevel']);
+    Route::apiResource('loyalty-points', LoyaltySettingController::class);
+});
+//////////////////////////////////////// LoyaltySetting ////////////////////////////////
+//////////////////////////////////////// LoyaltySetting ////////////////////////////////
