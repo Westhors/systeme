@@ -18,6 +18,7 @@ class CustomerResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'address' => $this->address,
+            'email' => $this->email,
             'phone' => $this->phone,
             'point' => $this->point, // أي نقاط يدوية موجودة
             'last_paid_amount' => $this->last_paid_amount,
