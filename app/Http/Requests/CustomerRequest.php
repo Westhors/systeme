@@ -24,6 +24,7 @@ class CustomerRequest extends FormRequest
         return [
             'name' => 'nullable',
             'phone' => 'nullable',
+            'email' => 'nullable|email',
             'address' => 'nullable',
         ];
     }
