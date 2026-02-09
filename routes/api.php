@@ -10,6 +10,7 @@ use App\Http\Controllers\ColorController;
 use App\Http\Controllers\ContactPeopleController;
 use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\CountryController;
+use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DeleveryManController;
 use App\Http\Controllers\EmailTemplateController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\SalesRepresentativeController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SliderController;
+use App\Http\Controllers\TaxController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TermsConditionController;
 use App\Http\Controllers\UnitController;
@@ -325,3 +327,33 @@ Route::middleware(['admin'])->group(function () {
 });
 //////////////////////////////////////// LoyaltySetting ////////////////////////////////
 //////////////////////////////////////// LoyaltySetting ////////////////////////////////
+
+
+
+//////////////////////////////////////// Currency ////////////////////////////////
+//////////////////////////////////////// Currency ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/currency/index', [CurrencyController::class, 'index']);
+    Route::post('/currency/restore', [CurrencyController::class, 'restore']); // لو عايز soft delete
+    Route::delete('/currency/delete', [CurrencyController::class, 'destroy']);
+    Route::put('/currency/{id}/{column}', [CurrencyController::class, 'toggle']);
+    Route::apiResource('currency', CurrencyController::class);
+});
+//////////////////////////////////////// Currency ////////////////////////////////
+//////////////////////////////////////// Currency ////////////////////////////////
+
+
+
+//////////////////////////////////////// tax ////////////////////////////////
+//////////////////////////////////////// tax ////////////////////////////////
+
+Route::middleware(['admin'])->group(function () {
+    Route::post('/tax/index', [TaxController::class, 'index']);
+    Route::post('/tax/restore', [TaxController::class, 'restore']); // لو عايز soft delete
+    Route::delete('/tax/delete', [TaxController::class, 'destroy']);
+    Route::put('/tax/{id}/{column}', [TaxController::class, 'toggle']);
+    Route::apiResource('tax', TaxController::class);
+});
+//////////////////////////////////////// tax ////////////////////////////////
+//////////////////////////////////////// tax ////////////////////////////////
