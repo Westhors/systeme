@@ -188,13 +188,13 @@ class InvoiceController extends Controller
 
         try {
             $invoice = Invoice::with(['items.product', 'customer'])
-                ->where('invoice_number', $request->invoice_number)
+                ->where('invoice_number', $request->query('invoice_number'))
                 ->first();
 
             if (!$invoice) {
                 return response()->json([
                     'status'  => false,
-                    'message' => "لا توجد فاتورة برقم {$request->invoice_number}"
+                    'message' => "لا توجد فاتورة برقم {$request->query('invoice_number')}"
                 ], 404);
             }
 

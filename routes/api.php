@@ -36,14 +36,19 @@ use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PolicyController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseInvoiceController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\PurchaseReturnController;
 use App\Http\Controllers\RefController;
 use App\Http\Controllers\ReturnInvoiceController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesInvoiceController;
+use App\Http\Controllers\SalesInvoiceReturnController;
 use App\Http\Controllers\SalesRepresentativeController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SliderController;
+use App\Http\Controllers\SuppliersController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TermsConditionController;
@@ -247,6 +252,7 @@ Route::middleware(['admin'])->group(function () {
     Route::get('/invoices/search', [InvoiceController::class, 'searchByInvoiceNumber']);
     Route::post('/invoices/index', [InvoiceController::class, 'invoiceIndex']);
     Route::post('/return-invoices/index', [ReturnInvoiceController::class, 'invoiceReturnIndex']);
+    Route::get('products/search', [ProductController::class, 'searchByProductName']);
 
 //////////////////////////////////////// invoice ////////////////////////////////
 //////////////////////////////////////// invoice ////////////////////////////////
@@ -368,5 +374,51 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/sales-invoice/store', [SalesInvoiceController::class, 'store']);
     Route::post('/sales-invoices/index', [SalesInvoiceController::class, 'invoiceIndex']);
     Route::get('/sales-invoices/{id}', [SalesInvoiceController::class, 'show']);
+    Route::post('/invoice-return/store', [SalesInvoiceReturnController::class, 'storeReturn']);
 //////////////////////////////////////// SalesInvoice ////////////////////////////////
 //////////////////////////////////////// SalesInvoice ////////////////////////////////
+
+
+
+//////////////////////////////////////// suppliers ////////////////////////////////
+//////////////////////////////////////// suppliers ////////////////////////////////
+Route::middleware(['admin'])->group(function () {
+    Route::post('/suppliers/index', [SuppliersController::class, 'index']);
+    Route::post('/suppliers/restore', [SuppliersController::class, 'restore']);
+    Route::delete('/suppliers/delete', [SuppliersController::class, 'destroy']);
+    Route::put('/suppliers/{id}/{column}', [SuppliersController::class, 'toggle']);
+    Route::apiResource('suppliers', SuppliersController::class);
+});
+//////////////////////////////////////// suppliers ////////////////////////////////
+//////////////////////////////////////// suppliers ////////////////////////////////
+
+
+//////////////////////////////////////// purchases-orders ////////////////////////////////
+//////////////////////////////////////// purchases-orders ////////////////////////////////
+    Route::post('/purchases-orders/store', [PurchaseOrderController::class, 'store']);
+    Route::post('/purchases-orders/index', [PurchaseOrderController::class, 'index']);
+    Route::get('/purchases-orders/{id}', [PurchaseOrderController::class, 'show']);
+//////////////////////////////////////// purchases-orders ////////////////////////////////
+//////////////////////////////////////// purchases-orders ////////////////////////////////
+
+
+
+//////////////////////////////////////// purchases-invoices ////////////////////////////////
+//////////////////////////////////////// purchases-invoices ////////////////////////////////
+    Route::post('/purchases-invoices/store', [PurchaseInvoiceController::class, 'store']);
+    Route::post('/purchases-invoices/index', [PurchaseInvoiceController::class, 'index']);
+    Route::get('/purchases-invoices/{id}', [PurchaseInvoiceController::class, 'show']);
+//////////////////////////////////////// purchases-invoices ////////////////////////////////
+//////////////////////////////////////// purchases-invoices ////////////////////////////////
+
+
+
+/////////////////////////////////////// purchases-returns ////////////////////////////////
+//////////////////////////////////////// purchases-returns ////////////////////////////////
+
+Route::post('/purchase-returns/store', [PurchaseReturnController::class, 'store']);
+Route::post('/purchase-returns/index', [PurchaseReturnController::class, 'index']);
+Route::get('/purchase-returns/{id}', [PurchaseReturnController::class, 'show']);
+
+/////////////////////////////////////// purchases-returns ////////////////////////////////
+//////////////////////////////////////// purchases-returns ////////////////////////////////

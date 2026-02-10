@@ -193,4 +193,39 @@ class ProductController extends BaseController
         }
     }
 
+
+    public function searchByProductName(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string'
+        ]);
+
+        try {
+            $products = Product::with(['category'])
+                ->where('name', 'LIKE', '%' . $request->query('name') . '%')
+                ->get();
+
+            if ($products->isEmpty()) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => "لا توجد منتجات باسم {$request->query('name')}"
+                ], 404);
+            }
+
+            return response()->json([
+                'status'  => true,
+                'message' => 'تم العثور على المنتجات',
+                'data'    => $products
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'حدث خطأ أثناء البحث',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 }
