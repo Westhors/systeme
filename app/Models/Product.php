@@ -43,4 +43,6 @@ class Product extends BaseModel
             ->withTimestamps();
     }
 
+    
+
 }
