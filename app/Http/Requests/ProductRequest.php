@@ -43,11 +43,7 @@ class ProductRequest extends FormRequest
             'units.*.unit_id'             => 'nullable|exists:units,id',
             'units.*.cost_price'          => 'nullable|numeric|min:0',
             'units.*.sell_price'          => 'nullable|numeric|min:0',
-            'units.*.barcode' => [
-                'nullable',
-                'string',
-                Rule::unique('product_units', 'barcode'),
-            ],
+            'units.*.barcode'             => 'nullable|string',
 
             // colors per unit
             'units.*.colors'              => 'nullable|array|min:1',
