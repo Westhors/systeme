@@ -27,7 +27,7 @@ class OfferResource extends JsonResource
 
             'active'       => $this->is_active,
 
-            'products'        => ProductResource::collection($this->whenLoaded('products')),
+            'products'        => ProductResource::collection($this->products),
 
             'created_at'      => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at'      => $this->updated_at?->format('Y-m-d H:i:s'),
