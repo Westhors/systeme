@@ -117,7 +117,10 @@ class InvoiceController extends Controller
             $total = collect($request->items)->sum(fn ($item) => $item['price'] * $item['quantity']);
             $paid = collect($request->payments)->sum('amount');
 
+            $invoiceNumber = 'INV-' . now()->format('Ymd') . '-' . rand(1000, 9999);
+
             $invoice = Invoice::create([
+                'invoice_number' => $invoiceNumber,
                 'customer_id'      => $request->customer_id,
                 'total_amount'     => $total,
                 'paid_amount'      => $paid,
