@@ -32,7 +32,7 @@ class ProductResource extends JsonResource
             'active'        => $this->active,
 
             'units' => ProductUnitResource::collection(
-                $this->whenLoaded('units')
+                $this->units
             ),
 
             'created_at' => $this->created_at,
