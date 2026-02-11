@@ -18,7 +18,7 @@ class ProductUnitResource extends JsonResource
             'barcode'     => $this->barcode,
 
             'colors'      => ProductUnitColorResource::collection(
-                $this->whenLoaded('colors')
+                $this->colors
             ),
         ];
     }
