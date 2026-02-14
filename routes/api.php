@@ -375,6 +375,7 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/sales-invoices/index', [SalesInvoiceController::class, 'invoiceIndex']);
     Route::get('/sales-invoices/{id}', [SalesInvoiceController::class, 'show']);
     Route::post('/sales-invoice-return/store', [SalesInvoiceReturnController::class, 'storeReturn']);
+    Route::post('/sales-return/index', [SalesInvoiceReturnController::class, 'index']);
 //////////////////////////////////////// SalesInvoice ////////////////////////////////
 //////////////////////////////////////// SalesInvoice ////////////////////////////////
 
