@@ -417,6 +417,7 @@ Route::get('/purchase-returns/{id}', [PurchaseReturnController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('shifts', [CashierShiftController::class, 'index']);
+    Route::get('shifts/current', [CashierShiftController::class, 'getCurrentShift']);
     Route::get('shifts/{shift}', [CashierShiftController::class, 'show']);
     Route::post('shifts/open', [CashierShiftController::class, 'openShift']);
     Route::post('shifts/{shift}/close', [CashierShiftController::class, 'closeShift']);

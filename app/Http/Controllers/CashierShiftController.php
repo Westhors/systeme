@@ -122,4 +122,35 @@ class CashierShiftController extends Controller
             'data'   => new CashierShiftResource($shift)
         ]);
     }
+
+
+   public function getCurrentShift()
+    {
+        $user = auth()->user();
+
+        $query = CashierShift::query()->where('status', 'open')
+            ->where(function ($q) use ($user) {
+                if ($user instanceof Admin) {
+                    $q->where('admin_id', $user->id);
+                } elseif ($user instanceof Employee) {
+                    $q->where('employee_id', $user->id);
+                }
+            });
+
+        $shift = $query->latest('opened_at')->first();
+
+        if (!$shift) {
+            return response()->json([
+                'status' => false,
+                'message' => 'لا توجد وردية مفتوحة حالياً'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'آخر وردية مفتوحة',
+            'data' => $shift
+        ]);
+    }
+
 }
