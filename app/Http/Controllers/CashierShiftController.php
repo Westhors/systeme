@@ -61,7 +61,7 @@ class CashierShiftController extends Controller
     }
 
     // اغلاق وردية
-    public function closeShift(Request $request, CashierShift $shift)
+  public function closeShift(Request $request)
     {
         $request->validate([
             'actual_amount' => 'required|numeric|min:0',
@@ -71,6 +71,27 @@ class CashierShiftController extends Controller
         DB::beginTransaction();
 
         try {
+            $user = auth()->user();
+
+            // جلب آخر وردية مفتوحة للشخص الحالي
+            $shift = CashierShift::where('status', 'open')
+                ->where(function ($q) use ($user) {
+                    if ($user instanceof Admin) {
+                        $q->where('admin_id', $user->id);
+                    } elseif ($user instanceof Employee) {
+                        $q->where('employee_id', $user->id);
+                    }
+                })
+                ->latest('opened_at')
+                ->first();
+
+            if (!$shift) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'لا توجد وردية مفتوحة حالياً'
+                ], 404);
+            }
+
             $expected = ($shift->cash_sales + $shift->card_sales - $shift->returns_amount);
 
             $shift->update([

@@ -420,5 +420,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('shifts/current', [CashierShiftController::class, 'getCurrentShift']);
     Route::get('shifts/{shift}', [CashierShiftController::class, 'show']);
     Route::post('shifts/open', [CashierShiftController::class, 'openShift']);
-    Route::post('shifts/{shift}/close', [CashierShiftController::class, 'closeShift']);
+    Route::post('shifts/close', [CashierShiftController::class, 'closeShift']);
 });
