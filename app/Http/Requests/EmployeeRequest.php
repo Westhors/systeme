@@ -13,8 +13,9 @@ class EmployeeRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('employee');
-
+      
+   $employee = $this->route('employee');
+    $id = $employee?->id;
         return [
             'employee_code' => 'required|string|max:100|unique:employees,employee_code,' . $id,
             'name'          => 'required|string|max:255',
