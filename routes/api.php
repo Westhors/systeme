@@ -44,7 +44,7 @@ Route::get('/user-total-count-country', [UserController::class, 'totalCountPerCo
 
 //////////////////////////////////////// user ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/user/index', [UserController::class, 'index']);
     Route::post('user/restore', [UserController::class, 'restore']);
     Route::delete('user/delete', [UserController::class, 'destroy']);
@@ -98,7 +98,7 @@ Route::post('/media-upload-many', [MediaController::class, 'storeMany']);
 
 //////////////////////////////////////// branch ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/branch/index', [BranchController::class, 'index']);
     Route::post('branch/restore', [BranchController::class, 'restore']);
     Route::delete('branch/delete', [BranchController::class, 'destroy']);
@@ -111,7 +111,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// warehouse ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/warehouse/index', [WarehouseController::class, 'index']);
     Route::post('warehouse/restore', [WarehouseController::class, 'restore']);
     Route::delete('warehouse/delete', [WarehouseController::class, 'destroy']);
@@ -130,7 +130,7 @@ Route::post('/warehouses/index-product', [InventoryLogController::class, 'indexP
 
 //////////////////////////////////////// color ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/color/index', [ColorController::class, 'index']);
     Route::post('color/restore', [ColorController::class, 'restore']);
     Route::delete('color/delete', [ColorController::class, 'destroy']);
@@ -144,7 +144,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// unit ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/unit/index', [UnitController::class, 'index']);
     Route::post('unit/restore', [UnitController::class, 'restore']);
     Route::delete('unit/delete', [UnitController::class, 'destroy']);
@@ -157,7 +157,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// category ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/category/index', [CategoryController::class, 'index']);
     Route::post('category/restore', [CategoryController::class, 'restore']);
     Route::delete('category/delete', [CategoryController::class, 'destroy']);
@@ -174,7 +174,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// product ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/product/index', [ProductController::class, 'index']);
     Route::post('product/restore', [ProductController::class, 'restore']);
     Route::delete('product/delete', [ProductController::class, 'destroy']);
@@ -190,7 +190,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// offer ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/offer/index', [OfferController::class, 'index']);
     Route::post('offer/restore', [OfferController::class, 'restore']);
     Route::delete('offer/delete', [OfferController::class, 'destroy']);
@@ -206,7 +206,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// customer ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/customer/index', [CustomerController::class, 'index']);
     Route::post('customer/restore', [CustomerController::class, 'restore']);
     Route::delete('customer/delete', [CustomerController::class, 'destroy']);
@@ -236,7 +236,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// Employee ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/employee/index', [EmployeeController::class, 'index']);
     Route::post('employee/restore', [EmployeeController::class, 'restore']);
     Route::delete('employee/delete', [EmployeeController::class, 'destroy']);
@@ -251,7 +251,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// SalesRepresentative ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/sales-representative/index', [SalesRepresentativeController::class, 'index']);
     Route::post('sales-representative/restore', [SalesRepresentativeController::class, 'restore']);
     Route::delete('sales-representative/delete', [SalesRepresentativeController::class, 'destroy']);
@@ -266,7 +266,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// DeleveryMan ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/delevery-man/index', [DeleveryManController::class, 'index']);
     Route::post('delevery-man/restore', [DeleveryManController::class, 'restore']);
     Route::delete('delevery-man/delete', [DeleveryManController::class, 'destroy']);
@@ -280,7 +280,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// Attendance ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/attendance/index', [AttendanceController::class, 'index']);
     Route::post('attendance/restore', [AttendanceController::class, 'restore']);
     Route::delete('attendance/delete', [AttendanceController::class, 'destroy']);
@@ -298,7 +298,7 @@ Route::post('/attendance/import', [AttendanceController::class, 'importAttendanc
 //////////////////////////////////////// LoyaltySetting ////////////////////////////////
 //////////////////////////////////////// LoyaltySetting ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/loyalty-points/index', [LoyaltySettingController::class, 'index']);
     Route::post('/loyalty-points/restore', [LoyaltySettingController::class, 'restore']); // لو عايز soft delete
     Route::delete('/loyalty-points/delete', [LoyaltySettingController::class, 'destroy']);
@@ -313,7 +313,7 @@ Route::middleware(['admin'])->group(function () {
 //////////////////////////////////////// Currency ////////////////////////////////
 //////////////////////////////////////// Currency ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/currency/index', [CurrencyController::class, 'index']);
     Route::post('/currency/restore', [CurrencyController::class, 'restore']); // لو عايز soft delete
     Route::delete('/currency/delete', [CurrencyController::class, 'destroy']);
@@ -328,7 +328,7 @@ Route::middleware(['admin'])->group(function () {
 //////////////////////////////////////// tax ////////////////////////////////
 //////////////////////////////////////// tax ////////////////////////////////
 
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/tax/index', [TaxController::class, 'index']);
     Route::post('/tax/restore', [TaxController::class, 'restore']); // لو عايز soft delete
     Route::delete('/tax/delete', [TaxController::class, 'destroy']);
@@ -356,7 +356,7 @@ Route::middleware(['admin'])->group(function () {
 
 //////////////////////////////////////// suppliers ////////////////////////////////
 //////////////////////////////////////// suppliers ////////////////////////////////
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/suppliers/index', [SuppliersController::class, 'index']);
     Route::post('/suppliers/restore', [SuppliersController::class, 'restore']);
     Route::delete('/suppliers/delete', [SuppliersController::class, 'destroy']);
