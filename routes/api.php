@@ -60,7 +60,7 @@ Route::get('/get-user-active', [UserController::class, 'indexActive']);
 //////////////////////////////////////// user ////////////////////////////////
 
 ////////////////////////////////////////// Admin ////////////////////////////////
-Route::middleware(['admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/admin/index', [AdminController::class, 'index']);
     Route::post('admin/restore', [AdminController::class, 'restore']);
     Route::delete('admin/delete', [AdminController::class, 'destroy']);

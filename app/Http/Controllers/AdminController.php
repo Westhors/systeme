@@ -174,14 +174,37 @@ class AdminController extends BaseController
     public function getCurrentAdmin()
     {
         try {
-            $admin = auth('admins')->user();
+
+           $user = auth()->user();
+
+        if ($user instanceof \App\Models\Admin) {
             return response()->json([
-                'data' =>  new AdminResource($admin)
+                'type' => 'admin',
+                'data' => new AdminResource($user)
             ]);
-        } catch (Exception $e) {
-            return JsonResponse::respondError($e->getMessage(), 401);
+        }
+
+        if ($user instanceof \App\Models\Employee) {
+            return response()->json([
+                'type' => 'employee',
+                'data' => new EmployeeResource($user)
+            ]);
+        }
+
+
+            return response()->json([
+                'status' => false,
+                'message' => 'غير مصرح'
+            ], 401);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
+
 
     /////////////////////////////// testing activity log ///////////////////////////////
 }
