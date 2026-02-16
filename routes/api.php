@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\CashierShiftController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CurrencyController;
@@ -411,3 +412,12 @@ Route::get('/purchase-returns/{id}', [PurchaseReturnController::class, 'show']);
     Route::apiResource('role', RoleController::class);
 //////////////////////////////////////// role ////////////////////////////////
 //////////////////////////////////////// role ////////////////////////////////
+
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('shifts', [CashierShiftController::class, 'index']);
+    Route::get('shifts/{shift}', [CashierShiftController::class, 'show']);
+    Route::post('shifts/open', [CashierShiftController::class, 'openShift']);
+    Route::post('shifts/{shift}/close', [CashierShiftController::class, 'closeShift']);
+});
