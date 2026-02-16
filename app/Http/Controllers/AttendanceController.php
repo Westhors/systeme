@@ -105,7 +105,7 @@ class AttendanceController extends BaseController
     public function importAttendance(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls'
+            'file' => 'required|file|mimes:xlsx,xlsl,csv'
         ]);
 
         try {
