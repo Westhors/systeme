@@ -22,6 +22,7 @@ return new class extends Migration
             $table->foreignId('role_id')->constrained()->cascadeOnDelete();
             $table->string('phone')->nullable();
             $table->string('email')->unique()->nullable();
+            $table->string('password')->nullable();
             $table->decimal('salary', 10, 2)->default(0);
 
             $table->softDeletes();
