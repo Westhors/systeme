@@ -9,6 +9,7 @@ use App\Interfaces\EmployeeRepositoryInterface;
 use App\Models\Employee;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class EmployeeController extends BaseController
 {
@@ -33,16 +34,24 @@ class EmployeeController extends BaseController
             return JsonResponse::respondError($e->getMessage());
         }
     }
-
     public function store(EmployeeRequest $request)
     {
         try {
-            $employee = $this->crudRepository->create($request->validated());
+            $data = $request->validated();
+
+            // تشفير كلمة المرور قبل الحفظ
+            if ($request->filled('password')) {
+                $data['password'] = Hash::make($request->password);
+            }
+
+            $employee = $this->crudRepository->create($data);
+
             return new EmployeeResource($employee);
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
+
 
     public function show(Employee $employee): ?\Illuminate\Http\JsonResponse
     {
@@ -54,16 +63,28 @@ class EmployeeController extends BaseController
     }
 
 
-    public function update(EmployeeRequest $request, Employee $employee)
+  public function update(EmployeeRequest $request, Employee $employee)
     {
         try {
-            $this->crudRepository->update($request->validated(), $employee->id);
+            $data = $request->validated();
+
+            // تشفير كلمة المرور إذا موجودة
+            if ($request->filled('password')) {
+                $data['password'] = Hash::make($request->password);
+            }
+
+            // تحديث الموظف
+            $this->crudRepository->update($data, $employee->id);
+
+            // تسجيل النشاط
             activity()->performedOn($employee)->withProperties(['attributes' => $employee])->log('update');
+
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_UPDATED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
+
 
 
     public function destroy(Request $request): ?\Illuminate\Http\JsonResponse

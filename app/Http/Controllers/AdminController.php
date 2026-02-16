@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Helpers\JsonResponse;
 use App\Http\Requests\AdminRequest;
 use App\Http\Resources\AdminResource;
+use App\Http\Resources\EmployeeResource;
 use App\Interfaces\AdminRepositoryInterface;
 use App\Models\Admin;
+use App\Models\Employee;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -110,29 +112,53 @@ class AdminController extends BaseController
         }
     }
 
-    public function login(Request $request): \Illuminate\Http\JsonResponse
+   public function login(Request $request): \Illuminate\Http\JsonResponse
     {
         $credentials = $request->only('email', 'password');
+
+        // 🔹 محاولة تسجيل الدخول كـ Admin
         $admin = Admin::where('email', $credentials['email'])->first();
+
         if ($admin) {
+            // تحديث الـ hash إذا لازم
             if (Hash::needsRehash($admin->password)) {
                 $admin->password = Hash::make($credentials['password']);
                 $admin->save();
             }
+
             if (Hash::check($credentials['password'], $admin->password)) {
                 activity()->performedOn($admin)->withProperties(['attributes' => $admin])->log('login');
+
                 $token = $admin->createToken('admin-token')->plainTextToken;
+
                 return response()->json([
+                    'type' => 'admin',
                     'data' => new AdminResource($admin),
                     'token' => $token,
                 ]);
             }
         }
+
+        // 🔹 محاولة تسجيل الدخول كـ Employee
+        $employee = Employee::where('email', $credentials['email'])->first();
+
+        if ($employee && Hash::check($credentials['password'], $employee->password)) {
+            $token = $employee->createToken('employee-token')->plainTextToken;
+
+            return response()->json([
+                'type' => 'employee',
+                'data' => new EmployeeResource($employee),
+                'token' => $token,
+            ]);
+        }
+
+        // 🔹 إذا لا Admin ولا Employee
         return response()->json([
             'result' => 'Error',
             'message' => 'Invalid credentials',
         ], 401);
     }
+
 
 
     public function logout()

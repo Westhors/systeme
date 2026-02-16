@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\JsonResponse;
 use App\Http\Requests\UserRequest;
+use App\Http\Resources\EmployeeResource;
 use App\Http\Resources\LogResource;
 use App\Http\Resources\UserIndexResource;
 use App\Http\Resources\UserResource;
@@ -12,6 +13,7 @@ use App\Mail\UserMail;
 use App\Mail\UserRequestMail;
 use App\Models\ContactPeople;
 use App\Models\EmailTemplate;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -155,7 +157,7 @@ class UserController extends BaseController
         }
     }
 
-    public function login(Request $request)
+   public function login(Request $request)
     {
         try {
             $request->validate([
@@ -163,21 +165,42 @@ class UserController extends BaseController
                 'password' => 'required',
             ]);
 
+            // 🔹 البحث في جدول المستخدمين
             $user = User::where('email', $request->email)->first();
 
-            if (!$user || !Hash::check($request->password, $user->password)) {
-                return JsonResponse::respondError('The provided credentials are incorrect.');
+            if ($user && Hash::check($request->password, $user->password)) {
+
+                $token = $user->createToken('auth_token')->plainTextToken;
+
+                return JsonResponse::respondSuccess([
+                    'type' => 'user',
+                    'access_token' => $token,
+                    'data' => new UserResource($user),
+                ]);
             }
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // 🔹 البحث في جدول الموظفين
+            $employee = Employee::where('email', $request->email)->first();
 
-            return JsonResponse::respondSuccess([
-                'access_token' => $token,
-            ]);
-        } catch (Exception $e) {
+            if ($employee && Hash::check($request->password, $employee->password)) {
+
+                $token = $employee->createToken('auth_token')->plainTextToken;
+
+                return JsonResponse::respondSuccess([
+                    'type' => 'employee',
+                    'access_token' => $token,
+                    'data' => new EmployeeResource($employee),
+                ]);
+            }
+
+            return JsonResponse::respondError('The provided credentials are incorrect.');
+
+        } catch (\Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
+
+
     public function forceDelete(Request $request): \Illuminate\Http\JsonResponse
     {
         try {

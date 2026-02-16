@@ -13,21 +13,27 @@ class EmployeeRequest extends FormRequest
 
     public function rules(): array
     {
+<<<<<<< HEAD
       
    $employee = $this->route('employee');
     $id = $employee?->id;
+=======
+        $id = $this->route('employee') ? $this->route('employee')->id : null;
+
+>>>>>>> 8ebd9a501d15c28f2f9771f7bb31b132a89b5280
         return [
             'employee_code' => 'required|string|max:100|unique:employees,employee_code,' . $id,
             'name'          => 'required|string|max:255',
-            // 'name_ar'       => 'nullable|string|max:255',
             'position'      => 'nullable|string|max:255',
             'department'    => 'nullable|string|max:255',
             'role_id'       => 'required|exists:roles,id',
             'phone'         => 'nullable|string|max:20',
             'email'         => 'nullable|email|unique:employees,email,' . $id,
             'salary'        => 'nullable|numeric|min:0',
+            'password'      => $this->isMethod('post') ? 'required|string|min:6' : 'nullable|string|min:6',
         ];
     }
+
 
     public function messages(): array
     {
@@ -36,6 +42,7 @@ class EmployeeRequest extends FormRequest
             'employee_code.unique'   => 'كود الموظف مستخدم بالفعل',
             'email.unique'           => 'البريد الإلكتروني مستخدم بالفعل',
             'salary.numeric'         => 'الراتب يجب أن يكون رقمًا صحيحًا',
+            'password.min'           => 'كلمة المرور يجب أن تكون على الأقل 6 أحرف',
         ];
     }
 }
