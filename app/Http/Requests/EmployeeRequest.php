@@ -21,6 +21,7 @@ class EmployeeRequest extends FormRequest
             // 'name_ar'       => 'nullable|string|max:255',
             'position'      => 'nullable|string|max:255',
             'department'    => 'nullable|string|max:255',
+            'role_id'       => 'required|exists:roles,id',
             'phone'         => 'nullable|string|max:20',
             'email'         => 'nullable|email|unique:employees,email,' . $id,
             'salary'        => 'nullable|numeric|min:0',
