@@ -8,7 +8,7 @@ class Invoice extends BaseModel
 {
     protected $guarded = ['id'];
 
-   
+
 
     public function items()
     {
@@ -24,5 +24,11 @@ class Invoice extends BaseModel
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function shift()
+    {
+        return $this->belongsTo(CashierShift::class, 'cashier_shift_id');
+    }
+
 }
 
