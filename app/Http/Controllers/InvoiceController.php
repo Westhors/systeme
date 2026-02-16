@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\InvoiceResource;
+use App\Models\Admin;
+use App\Models\CashierShift;
 use App\Models\Customer;
+use App\Models\Employee;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
@@ -109,18 +112,21 @@ class InvoiceController extends Controller
     }
 
 
-   public function store(Request $request)
+    public function store(Request $request)
     {
-            DB::beginTransaction();
+        DB::beginTransaction();
 
         try {
-            $total = collect($request->items)->sum(fn ($item) => $item['price'] * $item['quantity']);
+
+            $total = collect($request->items)
+                ->sum(fn ($item) => $item['price'] * $item['quantity']);
+
             $paid = collect($request->payments)->sum('amount');
 
             $invoiceNumber = 'INV-' . now()->format('Ymd') . '-' . rand(1000, 9999);
 
             $invoice = Invoice::create([
-                'invoice_number' => $invoiceNumber,
+                'invoice_number'   => $invoiceNumber,
                 'customer_id'      => $request->customer_id,
                 'total_amount'     => $total,
                 'paid_amount'      => $paid,
@@ -128,6 +134,11 @@ class InvoiceController extends Controller
                 'status'           => $paid >= $total ? 'paid' : 'partial',
             ]);
 
+            /*
+            |--------------------------------------------------------------------------
+            | إضافة العناصر
+            |--------------------------------------------------------------------------
+            */
             foreach ($request->items as $item) {
                 $invoice->items()->create([
                     'product_id'   => $item['product_id'],
@@ -140,6 +151,11 @@ class InvoiceController extends Controller
                 ]);
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | إضافة المدفوعات
+            |--------------------------------------------------------------------------
+            */
             foreach ($request->payments as $payment) {
                 $invoice->payments()->create([
                     'method' => $payment['method'],
@@ -147,20 +163,63 @@ class InvoiceController extends Controller
                 ]);
             }
 
-            // تحديث نقاط الولاء للعميل على أساس المبلغ المدفوع فقط
+            /*
+            |--------------------------------------------------------------------------
+            | تحديث نقاط الولاء
+            |--------------------------------------------------------------------------
+            */
             $loyaltySetting = LoyaltySetting::first();
+
             if ($loyaltySetting && $loyaltySetting->point_value > 0) {
+
                 $customer = Customer::find($request->customer_id);
 
-                // عدد النقاط = المبلغ المدفوع ÷ قيمة النقطة
-                $earnedPoints = floor($paid / $loyaltySetting->point_value);
+                if ($customer) {
+                    $earnedPoints = floor($paid / $loyaltySetting->point_value);
 
-                // تحديث النقاط
-                $customer->point = ($customer->point ?? 0) + $earnedPoints;
+                    $customer->point = ($customer->point ?? 0) + $earnedPoints;
+                    $customer->last_paid_amount = $paid;
+                    $customer->save();
+                }
+            }
 
-                // حفظ المبلغ المدفوع فقط للمشتريات الأخيرة (اختياري)
-                $customer->last_paid_amount = $paid; // لو عندك حقل last_paid_amount
-                $customer->save();
+            /*
+            |--------------------------------------------------------------------------
+            | ربط الفاتورة بالوردية المفتوحة + تحديث مبيعاتها
+            |--------------------------------------------------------------------------
+            */
+            $user = auth()->user();
+
+            $shift = CashierShift::where('status', 'open')
+                ->where(function ($q) use ($user) {
+                    if ($user instanceof Admin) {
+                        $q->where('admin_id', $user->id);
+                    } elseif ($user instanceof Employee) {
+                        $q->where('employee_id', $user->id);
+                    }
+                })
+                ->latest('opened_at')
+                ->first();
+
+            if ($shift) {
+
+                // ربط الفاتورة بالوردية
+                $invoice->update([
+                    'cashier_shift_id' => $shift->id
+                ]);
+
+                // حساب المدفوعات حسب الطريقة
+                $cash = collect($request->payments)
+                    ->where('method', 'cash')
+                    ->sum('amount');
+
+                $card = collect($request->payments)
+                    ->where('method', 'card')
+                    ->sum('amount');
+
+                // تحديث مبيعات الوردية
+                $shift->increment('cash_sales', $cash);
+                $shift->increment('card_sales', $card);
             }
 
             DB::commit();
@@ -169,12 +228,14 @@ class InvoiceController extends Controller
                 'status'  => true,
                 'message' => 'Invoice created successfully',
                 'data'    => new InvoiceResource(
-                    $invoice->load(['items', 'payments', 'customer'])
+                    $invoice->load(['items', 'payments', 'customer', 'shift'])
                 )
             ], 201);
 
         } catch (\Exception $e) {
+
             DB::rollBack();
+
             return response()->json([
                 'status'  => false,
                 'message' => $e->getMessage(),
