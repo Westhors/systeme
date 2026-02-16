@@ -15,6 +15,7 @@ use App\Interfaces\InventoryRepositoryInterface;
 use App\Interfaces\LoyaltySettingRepositoryInterface;
 use App\Interfaces\OfferRepositoryInterface;
 use App\Interfaces\ProductRepositoryInterface;
+use App\Interfaces\RoleRepositoryInterface;
 use App\Interfaces\SalesRepresentativeRepositoryInterface;
 use App\Interfaces\SupplierRepositoryInterface;
 use App\Interfaces\TaxRepositoryInterface;
@@ -34,6 +35,7 @@ use App\Repositories\InventoryRepository;
 use App\Repositories\LoyaltySettingRepository;
 use App\Repositories\OfferRepository;
 use App\Repositories\ProductRepository;
+use App\Repositories\RoleRepository;
 use App\Repositories\SalesRepresentativeRepository;
 use App\Repositories\SupplierRepository;
 use App\Repositories\TaxRepository;
@@ -68,7 +70,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(TaxRepositoryInterface::class, TaxRepository::class);
         $this->app->bind(CurrencyRepositoryInterface::class, CurrencyRepository::class);
         $this->app->bind(SupplierRepositoryInterface::class, SupplierRepository::class);
-
+        $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
     }
 
     /**

@@ -18,7 +18,8 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('name_ar')->nullable();
             $table->string('position')->nullable();
-            $table->string('department')->nullable();
+            // $table->string('department')->nullable();
+            $table->foreignId('role_id')->constrained()->cascadeOnDelete();
             $table->string('phone')->nullable();
             $table->string('email')->unique()->nullable();
             $table->decimal('salary', 10, 2)->default(0);

@@ -11,4 +11,9 @@ class Employee extends BaseModel
 
     protected $guarded = ['id'];
 
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
 }
