@@ -20,6 +20,7 @@ use App\Http\Controllers\PurchaseInvoiceController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseReturnController;
 use App\Http\Controllers\ReturnInvoiceController;
+use App\Http\Controllers\RevenueController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesInvoiceController;
 use App\Http\Controllers\SalesInvoiceReturnController;
@@ -349,6 +350,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/sales-invoices/{id}', [SalesInvoiceController::class, 'show']);
     Route::post('/sales-invoice-return/store', [SalesInvoiceReturnController::class, 'storeReturn']);
     Route::post('/sales-return/index', [SalesInvoiceReturnController::class, 'index']);
+    Route::get('/sales-return/{id}', [SalesInvoiceReturnController::class, 'show']);
+
 //////////////////////////////////////// SalesInvoice ////////////////////////////////
 //////////////////////////////////////// SalesInvoice ////////////////////////////////
 
@@ -413,6 +416,8 @@ Route::get('/purchase-returns/{id}', [PurchaseReturnController::class, 'show']);
 //////////////////////////////////////// role ////////////////////////////////
 //////////////////////////////////////// role ////////////////////////////////
 
+//////////////////////////////////////// shifts ////////////////////////////////
+//////////////////////////////////////// shifts ////////////////////////////////
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -422,3 +427,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('shifts/open', [CashierShiftController::class, 'openShift']);
     Route::post('shifts/close', [CashierShiftController::class, 'closeShift']);
 });
+
+//////////////////////////////////////// shifts ////////////////////////////////
+//////////////////////////////////////// shifts ////////////////////////////////
+
+
+
+
+
+//////////////////////////////////////// Revenue ////////////////////////////////
+//////////////////////////////////////// Revenue ////////////////////////////////
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/revenue/index', [RevenueController::class, 'index']);
+    Route::post('revenue/restore', [RevenueController::class, 'restore']);
+    Route::delete('revenue/delete', [RevenueController::class, 'destroy']);
+    Route::put('/revenue/{id}/{column}', [RevenueController::class, 'toggle']);
+    Route::delete('revenue/force-delete', [RevenueController::class, 'forceDelete']);
+    Route::apiResource('revenues', RevenueController::class);
+});
+
+//////////////////////////////////////// Revenue ////////////////////////////////
+//////////////////////////////////////// Revenue ////////////////////////////////
+
