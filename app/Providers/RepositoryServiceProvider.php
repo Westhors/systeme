@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Interfaces\AdminRepositoryInterface;
+use App\Interfaces\RevenueRepositoryInterface;
 use App\Interfaces\AttendanceRepositoryInterface;
 use App\Interfaces\BranchRepositoryInterface;
 use App\Interfaces\CategoryRepositoryInterface;
@@ -35,6 +36,7 @@ use App\Repositories\InventoryRepository;
 use App\Repositories\LoyaltySettingRepository;
 use App\Repositories\OfferRepository;
 use App\Repositories\ProductRepository;
+use App\Repositories\RevenueRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\SalesRepresentativeRepository;
 use App\Repositories\SupplierRepository;
@@ -70,6 +72,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(TaxRepositoryInterface::class, TaxRepository::class);
         $this->app->bind(CurrencyRepositoryInterface::class, CurrencyRepository::class);
         $this->app->bind(SupplierRepositoryInterface::class, SupplierRepository::class);
+        $this->app->bind(RevenueRepositoryInterface::class, RevenueRepository::class);
         $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
     }
 

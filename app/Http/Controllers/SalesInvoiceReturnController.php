@@ -130,7 +130,39 @@ public function index(Request $request)
         ], 500);
     }
 }
+public function show($id)
+{
+    try {
 
+        $return = SalesInvoiceReturn::with([
+            'invoice.customer',
+            'items.product',
+        ])->findOrFail($id);
+
+        return response()->json([
+            'data' => new SalesInvoiceReturnResource($return),
+            'result' => 'Success',
+            'message' => 'Sales return fetched successfully',
+            'status' => 200,
+        ]);
+
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+
+        return response()->json([
+            'result' => 'Error',
+            'message' => 'Sales return not found',
+            'status' => 404,
+        ], 404);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'result' => 'Error',
+            'message' => $e->getMessage(),
+            'status' => 500,
+        ], 500);
+    }
+}
 
     public function storeReturn(StoreSalesInvoiceReturnRequest $request)
     {
