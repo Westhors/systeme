@@ -39,14 +39,14 @@ class ProductRequest extends FormRequest
             'cost'            => 'nullable|numeric|min:0',
 
             // units
-            'units'                       => 'nullable|array|min:1',
+            'units' => 'sometimes|array',
             'units.*.unit_id'             => 'nullable|exists:units,id',
             'units.*.cost_price'          => 'nullable|numeric|min:0',
             'units.*.sell_price'          => 'nullable|numeric|min:0',
             'units.*.barcode'             => 'nullable|string',
 
             // colors per unit
-            'units.*.colors'              => 'nullable|array|min:1',
+            'units.*.colors' => 'sometimes|array',
             'units.*.colors.*.color_id'   => 'nullable|exists:colors,id',
             'units.*.colors.*.stock'      => 'nullable|integer|min:0',
         ];

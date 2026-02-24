@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CashierShiftController;
 use App\Http\Controllers\CategoryController;
@@ -10,6 +12,7 @@ use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DeleveryManController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\InventoryLogController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LoyaltySettingController;
@@ -27,6 +30,7 @@ use App\Http\Controllers\SalesInvoiceReturnController;
 use App\Http\Controllers\SalesRepresentativeController;
 use App\Http\Controllers\SuppliersController;
 use App\Http\Controllers\TaxController;
+use App\Http\Controllers\TreasuryController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseController;
@@ -444,9 +448,64 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('revenue/delete', [RevenueController::class, 'destroy']);
     Route::put('/revenue/{id}/{column}', [RevenueController::class, 'toggle']);
     Route::delete('revenue/force-delete', [RevenueController::class, 'forceDelete']);
-    Route::apiResource('revenues', RevenueController::class);
+    Route::apiResource('revenue', RevenueController::class);
 });
 
 //////////////////////////////////////// Revenue ////////////////////////////////
 //////////////////////////////////////// Revenue ////////////////////////////////
 
+//////////////////////////////////////// Finance ////////////////////////////////
+//////////////////////////////////////// Finance ////////////////////////////////
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/finance/index', [FinanceController::class, 'index']);
+    Route::post('finance/restore', [FinanceController::class, 'restore']);
+    Route::delete('finance/delete', [FinanceController::class, 'destroy']);
+    Route::put('/finance/{id}/{column}', [FinanceController::class, 'toggle']);
+    Route::delete('finance/force-delete', [FinanceController::class, 'forceDelete']);
+    Route::apiResource('finance', FinanceController::class);
+});
+
+//////////////////////////////////////// Finance ////////////////////////////////
+//////////////////////////////////////// Finance ////////////////////////////////
+
+
+//////////////////////////////////////// Bank ////////////////////////////////
+//////////////////////////////////////// Bank ////////////////////////////////
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/bank/index', [BankController::class, 'index']);
+    Route::post('bank/restore', [BankController::class, 'restore']);
+    Route::delete('bank/delete', [BankController::class, 'destroy']);
+    Route::put('/bank/{id}/{column}', [BankController::class, 'toggle']);
+    Route::delete('bank/force-delete', [BankController::class, 'forceDelete']);
+    Route::apiResource('bank', BankController::class);
+});
+
+//////////////////////////////////////// Bank ////////////////////////////////
+//////////////////////////////////////// Bank ////////////////////////////////
+
+
+
+//////////////////////////////////////// Treasury ////////////////////////////////
+//////////////////////////////////////// Treasury ////////////////////////////////
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/treasury/index', [TreasuryController::class, 'index']);
+    Route::post('treasury/restore', [TreasuryController::class, 'restore']);
+    Route::delete('treasury/delete', [TreasuryController::class, 'destroy']);
+    Route::put('/treasury/{id}/{column}', [TreasuryController::class, 'toggle']);
+    Route::delete('treasury/force-delete', [TreasuryController::class, 'forceDelete']);
+    Route::apiResource('treasury', TreasuryController::class);
+});
+
+//////////////////////////////////////// Treasury ////////////////////////////////
+//////////////////////////////////////// Treasury ////////////////////////////////
+
+
+
+
+
+
+Route::get('accounts', [AccountController::class, 'index']);
+Route::get('accounts/{code}', [AccountController::class, 'show']);

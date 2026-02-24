@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\ContactPeople;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -15,6 +13,7 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call([
+            ChartOfAccountsSeeder::class,
             RoleSeeder::class
         ]);
 

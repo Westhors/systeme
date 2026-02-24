@@ -159,8 +159,6 @@ class AdminController extends BaseController
         ], 401);
     }
 
-
-
     public function logout()
     {
         try {
