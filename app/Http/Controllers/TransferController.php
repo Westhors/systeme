@@ -78,12 +78,22 @@ class TransferController extends Controller
             $perPage   = $request->input('perPage', 10);
             $paginate  = $request->boolean('paginate', true);
 
+            // الحركات الخاصة بالخزنة
+            $treasuryTypes = [
+                'treasury_to_treasury',
+                'treasury_to_bank',
+                'bank_to_treasury',
+                'treasury_deposit',
+                'treasury_withdraw',
+            ];
+
             $query = Transfer::with([
                 'fromTreasury',
                 'toTreasury',
                 'fromBank',
                 'toBank'
-            ]);
+            ])
+            ->whereIn('type', $treasuryTypes);
 
             // ================= FILTERS =================
             if (!empty($filters['treasury_id'])) {
@@ -114,14 +124,12 @@ class TransferController extends Controller
 
                 return response()->json([
                     'data' => TransferResource::collection($rows->items()),
-
                     'links' => [
                         'first' => $rows->url(1),
                         'last'  => $rows->url($rows->lastPage()),
                         'prev'  => $rows->previousPageUrl(),
                         'next'  => $rows->nextPageUrl(),
                     ],
-
                     'meta' => [
                         'current_page' => $rows->currentPage(),
                         'from'         => $rows->firstItem(),
@@ -129,14 +137,12 @@ class TransferController extends Controller
                         'per_page'     => $rows->perPage(),
                         'total'        => $rows->total(),
                     ],
-
                     'result'  => 'Success',
                     'message' => 'Treasury movements fetched successfully',
                     'status'  => 200,
                 ]);
             }
 
-            // ================= NON PAGINATED =================
             $rows = $query->get();
 
             return response()->json([
@@ -164,12 +170,22 @@ class TransferController extends Controller
             $perPage   = $request->input('perPage', 10);
             $paginate  = $request->boolean('paginate', true);
 
+            // الحركات الخاصة بالبنك
+            $bankTypes = [
+                'treasury_to_bank',
+                'bank_to_treasury',
+                'bank_to_bank',
+                'bank_deposit',
+                'bank_withdraw',
+            ];
+
             $query = Transfer::with([
                 'fromTreasury',
                 'toTreasury',
                 'fromBank',
                 'toBank'
-            ]);
+            ])
+            ->whereIn('type', $bankTypes);
 
             // ================= FILTERS =================
             if (!empty($filters['bank_id'])) {
@@ -200,14 +216,12 @@ class TransferController extends Controller
 
                 return response()->json([
                     'data' => TransferResource::collection($rows->items()),
-
                     'links' => [
                         'first' => $rows->url(1),
                         'last'  => $rows->url($rows->lastPage()),
                         'prev'  => $rows->previousPageUrl(),
                         'next'  => $rows->nextPageUrl(),
                     ],
-
                     'meta' => [
                         'current_page' => $rows->currentPage(),
                         'from'         => $rows->firstItem(),
@@ -215,14 +229,12 @@ class TransferController extends Controller
                         'per_page'     => $rows->perPage(),
                         'total'        => $rows->total(),
                     ],
-
                     'result'  => 'Success',
                     'message' => 'Bank movements fetched successfully',
                     'status'  => 200,
                 ]);
             }
 
-            // ================= NON PAGINATED =================
             $rows = $query->get();
 
             return response()->json([
