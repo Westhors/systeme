@@ -26,6 +26,7 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->string('currency', 10)->default('EGP');
+            $table->decimal('balance', 15, 2)->default(0); 
 
             $table->string('contact_person')->nullable();
             $table->string('phone')->nullable();

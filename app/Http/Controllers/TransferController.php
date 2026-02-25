@@ -17,34 +17,23 @@ class TransferController extends Controller
     {
         try {
             DB::transaction(function () use ($request) {
-
                 $amount = $request->amount;
                 $type   = $request->type;
 
                 // ================= خصم أو إضافة =================
                 if (in_array($type, ['treasury_to_treasury','treasury_to_bank','treasury_withdraw'])) {
                     $source = Treasury::lockForUpdate()->findOrFail($request->from_treasury_id);
-                    if ($source->balance < $amount) {
-                        throw new \Exception('الرصيد غير كافي في الخزنة المصدر');
-                    }
+                    if ($source->balance < $amount) throw new \Exception('الرصيد غير كافي في الخزنة المصدر');
                     $source->decrement('balance', $amount);
                 }
 
-                if (in_array($type, ['bank_to_treasury','bank_to_treasury','bank_withdraw'])) {
+                if (in_array($type, ['bank_to_treasury','bank_to_bank','bank_withdraw'])) {
                     $source = Bank::lockForUpdate()->findOrFail($request->from_bank_id);
-                    if ($source->balance < $amount) {
-                        throw new \Exception('الرصيد غير كافي في البنك المصدر');
-                    }
+                    if ($source->balance < $amount) throw new \Exception('الرصيد غير كافي في البنك المصدر');
                     $source->decrement('balance', $amount);
                 }
 
-                if (in_array($type, ['bank_to_bank'])) {
-                    $source = Bank::lockForUpdate()->findOrFail($request->from_bank_id);
-                    if ($source->balance < $amount) {
-                        throw new \Exception('الرصيد غير كافي في البنك المصدر');
-                    }
-                    $source->decrement('balance', $amount);
-
+                if ($type === 'bank_to_bank') {
                     $destination = Bank::lockForUpdate()->findOrFail($request->to_bank_id);
                     $destination->increment('balance', $amount);
                 }

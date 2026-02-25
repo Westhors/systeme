@@ -11,20 +11,17 @@ class TransferRequest extends FormRequest
         return true;
     }
 
-    public function rules(): array
+    public function rules()
     {
         return [
-            'type' => 'required|in:treasury_to_treasury,treasury_to_bank,bank_to_treasury,treasury_deposit,treasury_withdraw,bank_deposit,bank_withdraw',
-
-            'from_treasury_id' => 'required_if:type,treasury_to_treasury,treasury_to_bank|nullable|exists:treasuries,id',
-            'to_treasury_id'   => 'required_if:type,treasury_to_treasury,bank_to_treasury|nullable|exists:treasuries,id',
-
-            'from_bank_id' => 'required_if:type,bank_to_treasury|nullable|exists:banks,id',
-            'to_bank_id'   => 'required_if:type,treasury_to_bank|nullable|exists:banks,id',
-
-            'amount' => 'required|numeric|min:0.01',
-            'currency' => 'required|string|max:10',
-            'notes' => 'nullable|string|max:500',
+            'type'             => 'required|in:treasury_to_treasury,treasury_to_bank,bank_to_treasury,bank_to_bank,treasury_deposit,treasury_withdraw,bank_deposit,bank_withdraw',
+            'from_treasury_id' => 'nullable|exists:treasuries,id',
+            'to_treasury_id'   => 'nullable|exists:treasuries,id',
+            'from_bank_id'     => 'nullable|exists:banks,id',
+            'to_bank_id'       => 'nullable|exists:banks,id',
+            'amount'           => 'required|numeric|min:1',
+            'currency'         => 'required|string|max:10',
+            'notes'            => 'nullable|string',
         ];
     }
 
