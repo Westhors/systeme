@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PurchaseInvoiceRequest;
 use App\Http\Requests\PurchaseOrderRequest;
 use App\Http\Resources\PurchaseInvoiceResource;
+use App\Http\Resources\TransferResource;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
+use App\Models\Transfer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -74,106 +76,91 @@ class PurchaseInvoiceController extends Controller
         }
     }
 
-    public function index(Request $request)
-    {
-        try {
-            $filters = $request->input('filters', []);
-            $orderBy = $request->input('orderBy', 'id');
-            $orderDir = $request->input('orderByDirection', 'desc');
-            $perPage = $request->input('perPage', 10);
-            $paginate = $request->boolean('paginate', true);
+public function treasuryMovements(Request $request)
+{
+    try {
+        $filters   = $request->input('filters', []);
+        $orderBy   = $request->input('orderBy', 'id');
+        $orderDir  = $request->input('orderByDirection', 'desc');
+        $perPage   = $request->input('perPage', 10);
+        $paginate  = $request->boolean('paginate', true);
 
-            $query = PurchaseInvoice::with([
-                'supplier',
-                'branch',
-                'warehouse',
-                'currency',
-                'tax'
-            ]);
+        $query = Transfer::with([
+            'fromTreasury',
+            'toTreasury',
+            'fromBank',
+            'toBank'
+        ]);
 
+        // ================= FILTERS =================
+        if (!empty($filters['treasury_id'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('from_treasury_id', $filters['treasury_id'])
+                  ->orWhere('to_treasury_id', $filters['treasury_id']);
+            });
+        }
 
-            if (!empty($filters['invoice_number'])) {
-                $query->where('invoice_number', 'like', '%' . $filters['invoice_number'] . '%');
-            }
+        if (!empty($filters['type'])) {
+            $query->where('type', $filters['type']);
+        }
 
-            if (!empty($filters['supplier_id'])) {
-                $query->where('supplier_id', $filters['supplier_id']);
-            }
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('created_at', '>=', $filters['date_from']);
+        }
 
-            if (!empty($filters['branch_id'])) {
-                $query->where('branch_id', $filters['branch_id']);
-            }
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('created_at', '<=', $filters['date_to']);
+        }
 
-            if (!empty($filters['warehouse_id'])) {
-                $query->where('warehouse_id', $filters['warehouse_id']);
-            }
+        // ================= SORT =================
+        $query->orderBy($orderBy, $orderDir);
 
-            if (!empty($filters['payment_method'])) {
-                $query->where('payment_method', $filters['payment_method']);
-            }
-
-            if (!empty($filters['currency_id'])) {
-                $query->where('currency_id', $filters['currency_id']);
-            }
-
-            if (!empty($filters['date_from'])) {
-                $query->whereDate('invoice_date', '>=', $filters['date_from']);
-            }
-
-            if (!empty($filters['date_to'])) {
-                $query->whereDate('invoice_date', '<=', $filters['date_to']);
-            }
-
-            // ================= SORT =================
-            $query->orderBy($orderBy, $orderDir);
-
-            // ================= PAGINATION =================
-            if ($paginate) {
-                $invoices = $query->paginate($perPage);
-
-                return response()->json([
-                    'data' => PurchaseInvoiceResource::collection($invoices->items()),
-
-                    'links' => [
-                        'first' => $invoices->url(1),
-                        'last' => $invoices->url($invoices->lastPage()),
-                        'prev' => $invoices->previousPageUrl(),
-                        'next' => $invoices->nextPageUrl(),
-                    ],
-
-                    'meta' => [
-                        'current_page' => $invoices->currentPage(),
-                        'from' => $invoices->firstItem(),
-                        'last_page' => $invoices->lastPage(),
-                        'per_page' => $invoices->perPage(),
-                        'total' => $invoices->total(),
-                    ],
-
-                    'result' => 'Success',
-                    'message' => 'Purchase invoices fetched successfully',
-                    'status' => 200,
-                ]);
-            }
-
-            // ================= NON PAGINATED =================
-            $invoices = $query->get();
+        // ================= PAGINATION =================
+        if ($paginate) {
+            $rows = $query->paginate($perPage);
 
             return response()->json([
-                'data' => PurchaseInvoiceResource::collection($invoices),
-                'result' => 'Success',
-                'message' => 'Purchase invoices fetched successfully',
-                'status' => 200,
-            ]);
+                'data' => TransferResource::collection($rows->items()),
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'result' => 'Error',
-                'message' => $e->getMessage(),
-                'status' => 500,
+                'links' => [
+                    'first' => $rows->url(1),
+                    'last'  => $rows->url($rows->lastPage()),
+                    'prev'  => $rows->previousPageUrl(),
+                    'next'  => $rows->nextPageUrl(),
+                ],
+
+                'meta' => [
+                    'current_page' => $rows->currentPage(),
+                    'from'         => $rows->firstItem(),
+                    'last_page'    => $rows->lastPage(),
+                    'per_page'     => $rows->perPage(),
+                    'total'        => $rows->total(),
+                ],
+
+                'result'  => 'Success',
+                'message' => 'Treasury movements fetched successfully',
+                'status'  => 200,
             ]);
         }
-    }
 
+        // ================= NON PAGINATED =================
+        $rows = $query->get();
+
+        return response()->json([
+            'data' => TransferResource::collection($rows),
+            'result'  => 'Success',
+            'message' => 'Treasury movements fetched successfully',
+            'status'  => 200,
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'result' => 'Error',
+            'message' => $e->getMessage(),
+            'status' => 500,
+        ]);
+    }
+}
 
     public function show($id)
     {

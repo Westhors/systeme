@@ -30,6 +30,7 @@ use App\Http\Controllers\SalesInvoiceReturnController;
 use App\Http\Controllers\SalesRepresentativeController;
 use App\Http\Controllers\SuppliersController;
 use App\Http\Controllers\TaxController;
+use App\Http\Controllers\TransferController;
 use App\Http\Controllers\TreasuryController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
@@ -503,9 +504,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 //////////////////////////////////////// Treasury ////////////////////////////////
 
 
-
-
-
+Route::post('transfer', [TransferController::class, 'transfer']);
+Route::post('/treasury-movement/index', [TransferController::class, 'treasuryMovements']);
+Route::post('/bank-movement/index', [TransferController::class, 'bankMovements']);
 
 Route::get('accounts', [AccountController::class, 'index']);
 Route::get('accounts/{code}', [AccountController::class, 'show']);
