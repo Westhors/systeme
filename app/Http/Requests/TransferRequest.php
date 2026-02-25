@@ -14,7 +14,7 @@ class TransferRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => 'required|in:treasury_to_treasury,treasury_to_bank,bank_to_treasury',
+            'type' => 'required|in:treasury_to_treasury,treasury_to_bank,bank_to_treasury,treasury_deposit,treasury_withdraw,bank_deposit,bank_withdraw',
 
             'from_treasury_id' => 'required_if:type,treasury_to_treasury,treasury_to_bank|nullable|exists:treasuries,id',
             'to_treasury_id'   => 'required_if:type,treasury_to_treasury,bank_to_treasury|nullable|exists:treasuries,id',
