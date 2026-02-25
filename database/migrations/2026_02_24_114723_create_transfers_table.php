@@ -18,11 +18,12 @@ return new class extends Migration
                 'treasury_to_treasury',
                 'treasury_to_bank',
                 'bank_to_treasury',
+                'bank_to_bank',
                 'treasury_deposit',      // إيداع في الخزنة
                 'treasury_withdraw',     // سحب من الخزنة
                 'bank_deposit',          // إيداع في البنك
                 'bank_withdraw'          // سحب من البنك
-            ]);
+            ])->nullable();
 
             $table->foreignId('from_treasury_id')->nullable()->constrained('treasuries')->nullOnDelete();
             $table->foreignId('to_treasury_id')->nullable()->constrained('treasuries')->nullOnDelete();
