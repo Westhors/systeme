@@ -508,5 +508,27 @@ Route::post('transfer', [TransferController::class, 'transfer']);
 Route::post('/treasury-movement/index', [TransferController::class, 'treasuryMovements']);
 Route::post('/bank-movement/index', [TransferController::class, 'bankMovements']);
 
-Route::get('accounts', [AccountController::class, 'index']);
-Route::get('accounts/{code}', [AccountController::class, 'show']);
+//////////////////////////////////////// Treasury ////////////////////////////////
+//////////////////////////////////////// Treasury ////////////////////////////////
+
+
+
+//////////////////////////////////////// accounts ////////////////////////////////
+//////////////////////////////////////// accounts ////////////////////////////////
+
+Route::prefix('accounts')->group(function () {
+    Route::get('/', [AccountController::class, 'index'])
+        ->name('accounts.index');
+    Route::get('{code}', [AccountController::class, 'show'])
+        ->name('accounts.show')
+        ->where('code', '[0-9]+'); // الكود يتكون من أرقام فقط
+    Route::get('/flat/tree', [AccountController::class, 'flatTree'])
+        ->name('accounts.flat.tree');
+    Route::get('/stats', [AccountController::class, 'treeStats'])
+        ->name('accounts.stats');
+});
+Route::get('chart-of-accounts', [AccountController::class, 'index']);
+
+
+//////////////////////////////////////// accounts ////////////////////////////////
+//////////////////////////////////////// accounts ////////////////////////////////
