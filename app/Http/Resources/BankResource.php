@@ -16,7 +16,7 @@ class BankResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            
+
             'account_number' => $this->account_number,
             'iban' => $this->iban,
             'swift_code' => $this->swift_code,
@@ -24,6 +24,7 @@ class BankResource extends JsonResource
             'branch_id' => $this->branch_id,
             'branch' => new BranchResource($this->branch) ?? null,
 
+            'balance' => $this->balance,
             'currency' => $this->currency,
 
             'contact_person' => $this->contact_person,
