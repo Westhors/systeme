@@ -76,6 +76,8 @@ class PurchaseInvoiceController extends Controller
         }
     }
 
+
+
 public function treasuryMovements(Request $request)
 {
     try {
@@ -196,4 +198,106 @@ public function treasuryMovements(Request $request)
             ]);
         }
     }
+
+    public function index(Request $request)
+    {
+        try {
+            $filters = $request->input('filters', []);
+            $orderBy = $request->input('orderBy', 'id');
+            $orderDir = $request->input('orderByDirection', 'desc');
+            $perPage = $request->input('perPage', 10);
+            $paginate = $request->boolean('paginate', true);
+
+            $query = PurchaseInvoice::with([
+                'supplier',
+                'branch',
+                'warehouse',
+                'currency',
+                'tax'
+            ]);
+
+
+            if (!empty($filters['invoice_number'])) {
+                $query->where('invoice_number', 'like', '%' . $filters['invoice_number'] . '%');
+            }
+
+            if (!empty($filters['supplier_id'])) {
+                $query->where('supplier_id', $filters['supplier_id']);
+            }
+
+            if (!empty($filters['branch_id'])) {
+                $query->where('branch_id', $filters['branch_id']);
+            }
+
+            if (!empty($filters['warehouse_id'])) {
+                $query->where('warehouse_id', $filters['warehouse_id']);
+            }
+
+            if (!empty($filters['payment_method'])) {
+                $query->where('payment_method', $filters['payment_method']);
+            }
+
+            if (!empty($filters['currency_id'])) {
+                $query->where('currency_id', $filters['currency_id']);
+            }
+
+            if (!empty($filters['date_from'])) {
+                $query->whereDate('invoice_date', '>=', $filters['date_from']);
+            }
+
+            if (!empty($filters['date_to'])) {
+                $query->whereDate('invoice_date', '<=', $filters['date_to']);
+            }
+
+            // ================= SORT =================
+            $query->orderBy($orderBy, $orderDir);
+
+            // ================= PAGINATION =================
+            if ($paginate) {
+                $invoices = $query->paginate($perPage);
+
+                return response()->json([
+                    'data' => PurchaseInvoiceResource::collection($invoices->items()),
+
+                    'links' => [
+                        'first' => $invoices->url(1),
+                        'last' => $invoices->url($invoices->lastPage()),
+                        'prev' => $invoices->previousPageUrl(),
+                        'next' => $invoices->nextPageUrl(),
+                    ],
+
+                    'meta' => [
+                        'current_page' => $invoices->currentPage(),
+                        'from' => $invoices->firstItem(),
+                        'last_page' => $invoices->lastPage(),
+                        'per_page' => $invoices->perPage(),
+                        'total' => $invoices->total(),
+                    ],
+
+                    'result' => 'Success',
+                    'message' => 'Purchase invoices fetched successfully',
+                    'status' => 200,
+                ]);
+            }
+
+            // ================= NON PAGINATED =================
+            $invoices = $query->get();
+
+            return response()->json([
+                'data' => PurchaseInvoiceResource::collection($invoices),
+                'result' => 'Success',
+                'message' => 'Purchase invoices fetched successfully',
+                'status' => 200,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'Error',
+                'message' => $e->getMessage(),
+                'status' => 500,
+            ]);
+        }
+    }
+
+
 }
