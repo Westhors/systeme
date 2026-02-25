@@ -17,7 +17,11 @@ return new class extends Migration
             $table->enum('type', [
                 'treasury_to_treasury',
                 'treasury_to_bank',
-                'bank_to_treasury'
+                'bank_to_treasury',
+                'treasury_deposit',      // إيداع في الخزنة
+                'treasury_withdraw',     // سحب من الخزنة
+                'bank_deposit',          // إيداع في البنك
+                'bank_withdraw'          // سحب من البنك
             ]);
 
             $table->foreignId('from_treasury_id')->nullable()->constrained('treasuries')->nullOnDelete();
