@@ -38,6 +38,17 @@ class TransferController extends Controller
                     $source->decrement('balance', $amount);
                 }
 
+                if (in_array($type, ['bank_to_bank'])) {
+                    $source = Bank::lockForUpdate()->findOrFail($request->from_bank_id);
+                    if ($source->balance < $amount) {
+                        throw new \Exception('الرصيد غير كافي في البنك المصدر');
+                    }
+                    $source->decrement('balance', $amount);
+
+                    $destination = Bank::lockForUpdate()->findOrFail($request->to_bank_id);
+                    $destination->increment('balance', $amount);
+                }
+
                 if (in_array($type, ['treasury_to_treasury','bank_to_treasury','treasury_deposit'])) {
                     $destination = Treasury::lockForUpdate()->findOrFail($request->to_treasury_id);
                     $destination->increment('balance', $amount);
