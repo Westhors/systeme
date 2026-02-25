@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class TreasuryRequest extends FormRequest
 {
@@ -23,7 +24,12 @@ class TreasuryRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50|unique:treasuries,code,' . $this->id,
+            'code' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('treasuries', 'code')->ignore($this->route('treasury')),
+            ],
             'branch_id' => 'nullable|exists:branches,id',
             'balance' => 'nullable|numeric|min:0',
             'currency' => 'required|string|max:10',
