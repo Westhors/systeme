@@ -44,116 +44,121 @@ class JournalEntryController extends Controller
         return response()->json(['message' => 'تم حفظ القيد']);
     }
 
-    public function journalEntryIndex(Request $request)
-    {
-        try {
+ public function journalEntryIndex(Request $request)
+{
+    try {
 
-            $filters = $request->input('filters', []);
-            $orderBy = $request->input('orderBy', 'journal_entries.id');
-            $orderByDirection = $request->input('orderByDirection', 'desc');
-            $perPage = $request->input('perPage', 10);
-            $paginate = $request->boolean('paginate', true);
+        $filters = $request->input('filters', []);
+        $orderBy = $request->input('orderBy', 'journal_entries.id');
+        $orderByDirection = $request->input('orderByDirection', 'desc');
+        $perPage = $request->input('perPage', 10);
+        $paginate = $request->boolean('paginate', true);
 
-            $query = JournalEntry::query()
-                ->leftJoin('journal_entry_lines', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
-                ->select(
-                    'journal_entries.*',
-                    \DB::raw('SUM(journal_entry_lines.debit) as total_debit'),
-                    \DB::raw('SUM(journal_entry_lines.credit) as total_credit')
-                )
-                ->groupBy('journal_entries.id');
+        $query = JournalEntry::query()
+            // حساب total_debit باستخدام subquery
+            ->select('journal_entries.*')
+            ->selectSub(function ($q) {
+                $q->from('journal_entry_lines')
+                  ->selectRaw('SUM(debit)')
+                  ->whereColumn('journal_entry_lines.journal_entry_id', 'journal_entries.id');
+            }, 'total_debit')
+            // حساب total_credit باستخدام subquery
+            ->selectSub(function ($q) {
+                $q->from('journal_entry_lines')
+                  ->selectRaw('SUM(credit)')
+                  ->whereColumn('journal_entry_lines.journal_entry_id', 'journal_entries.id');
+            }, 'total_credit');
 
-            // =========================
-            // FILTERS
-            // =========================
+        // =========================
+        // FILTERS
+        // =========================
 
-            if (!empty($filters['entry_number'])) {
-                $query->where('journal_entries.id', 'like', '%' . $filters['entry_number'] . '%');
-            }
+        if (!empty($filters['entry_number'])) {
+            $query->where('journal_entries.id', 'like', '%' . $filters['entry_number'] . '%');
+        }
 
-            if (!empty($filters['status'])) {
-                $query->where('journal_entries.status', $filters['status']);
-            }
+        if (!empty($filters['status'])) {
+            $query->where('journal_entries.status', $filters['status']);
+        }
 
-            if (!empty($filters['date_from'])) {
-                $query->whereDate('journal_entries.entry_date', '>=', $filters['date_from']);
-            }
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('journal_entries.entry_date', '>=', $filters['date_from']);
+        }
 
-            if (!empty($filters['date_to'])) {
-                $query->whereDate('journal_entries.entry_date', '<=', $filters['date_to']);
-            }
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('journal_entries.entry_date', '<=', $filters['date_to']);
+        }
 
-            if (!empty($filters['description'])) {
-                $query->where(function ($q) use ($filters) {
-                    $q->where('journal_entries.description_ar', 'like', '%' . $filters['description'] . '%')
-                    ->orWhere('journal_entries.description_en', 'like', '%' . $filters['description'] . '%');
-                });
-            }
+        if (!empty($filters['description'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('journal_entries.description_ar', 'like', '%' . $filters['description'] . '%')
+                  ->orWhere('journal_entries.description_en', 'like', '%' . $filters['description'] . '%');
+            });
+        }
 
-            // =========================
-            // SORT
-            // =========================
+        // =========================
+        // SORT
+        // =========================
 
-            $query->orderBy($orderBy, $orderByDirection);
+        $query->orderBy($orderBy, $orderByDirection);
 
-            // =========================
-            // PAGINATION MODE
-            // =========================
+        // =========================
+        // PAGINATION MODE
+        // =========================
 
-            if ($paginate) {
-
-                $entries = $query->paginate($perPage);
-
-                return response()->json([
-                    'data' => $entries->items(),
-
-                    'links' => [
-                        'first' => $entries->url(1),
-                        'last' => $entries->url($entries->lastPage()),
-                        'prev' => $entries->previousPageUrl(),
-                        'next' => $entries->nextPageUrl(),
-                    ],
-
-                    'meta' => [
-                        'current_page' => $entries->currentPage(),
-                        'from' => $entries->firstItem(),
-                        'last_page' => $entries->lastPage(),
-                        'path' => $entries->path(),
-                        'per_page' => $entries->perPage(),
-                        'to' => $entries->lastItem(),
-                        'total' => $entries->total(),
-                    ],
-
-                    'result' => 'Success',
-                    'message' => 'Journal entries fetched successfully',
-                    'status' => 200,
-                ]);
-            }
-
-            // =========================
-            // NON PAGINATED MODE
-            // =========================
-
-            $entries = $query->get();
+        if ($paginate) {
+            $entries = $query->paginate($perPage);
 
             return response()->json([
-                'data' => $entries,
-                'links' => null,
-                'meta' => null,
+                'data' => $entries->items(),
+
+                'links' => [
+                    'first' => $entries->url(1),
+                    'last' => $entries->url($entries->lastPage()),
+                    'prev' => $entries->previousPageUrl(),
+                    'next' => $entries->nextPageUrl(),
+                ],
+
+                'meta' => [
+                    'current_page' => $entries->currentPage(),
+                    'from' => $entries->firstItem(),
+                    'last_page' => $entries->lastPage(),
+                    'path' => $entries->path(),
+                    'per_page' => $entries->perPage(),
+                    'to' => $entries->lastItem(),
+                    'total' => $entries->total(),
+                ],
+
                 'result' => 'Success',
                 'message' => 'Journal entries fetched successfully',
                 'status' => 200,
             ]);
-
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'result' => 'Error',
-                'message' => $e->getMessage(),
-                'status' => 500,
-            ], 500);
         }
+
+        // =========================
+        // NON PAGINATED MODE
+        // =========================
+
+        $entries = $query->get();
+
+        return response()->json([
+            'data' => $entries,
+            'links' => null,
+            'meta' => null,
+            'result' => 'Success',
+            'message' => 'Journal entries fetched successfully',
+            'status' => 200,
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'result' => 'Error',
+            'message' => $e->getMessage(),
+            'status' => 500,
+        ], 500);
     }
+}
     public function reports()
     {
         $totalEntries = JournalEntry::count();
