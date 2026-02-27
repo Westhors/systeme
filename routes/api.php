@@ -15,6 +15,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\InventoryLogController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\LoyaltySettingController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\OfferController;
@@ -529,6 +530,9 @@ Route::prefix('accounts')->group(function () {
 });
 Route::get('chart-of-accounts', [AccountController::class, 'index']);
 
+Route::post('/journal-entries', [JournalEntryController::class, 'store']);
+Route::post('/journal-entries/index', [JournalEntryController::class, 'journalEntryIndex']);
+ Route::get('/journal-entries/reports', [JournalEntryController::class, 'reports']);
+//////////////////////////////////////// accounts ////////////////////////////////
+//////////////////////////////////////// accounts ////////////////////////////////
 
-//////////////////////////////////////// accounts ////////////////////////////////
-//////////////////////////////////////// accounts ////////////////////////////////
