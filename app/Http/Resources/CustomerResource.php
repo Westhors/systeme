@@ -22,6 +22,7 @@ class CustomerResource extends JsonResource
             'phone' => $this->phone,
             'point' => $this->point, // أي نقاط يدوية موجودة
             'last_paid_amount' => $this->last_paid_amount,
+            'created_at'      => $this->created_at?->format('Y-m-d H:i:s'),
             // 'total_invoices_amount' => $this->total_invoices_amount,
             // 'loyalty_points' => $this->loyalty_points, // النقاط المحسوبة تلقائياً
         ];
