@@ -531,8 +531,10 @@ Route::prefix('accounts')->group(function () {
 Route::get('chart-of-accounts', [AccountController::class, 'index']);
 
 Route::post('/journal-entries', [JournalEntryController::class, 'store']);
+Route::patch('journal-entries/{journalEntry}/post', [JournalEntryController::class, 'post']);
+Route::get('journal-entries/{id}', [JournalEntryController::class, 'show']);
 Route::post('/journal-entries/index', [JournalEntryController::class, 'journalEntryIndex']);
- Route::get('/journal-entries/reports', [JournalEntryController::class, 'reports']);
+Route::get('/journal-entries/reports', [JournalEntryController::class, 'reports']);
 //////////////////////////////////////// accounts ////////////////////////////////
 //////////////////////////////////////// accounts ////////////////////////////////
 

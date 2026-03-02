@@ -173,4 +173,52 @@ class JournalEntryController extends Controller
             'drafts'        => $drafts,
         ]);
     }
+
+    public function show($id)
+    {
+        try {
+            $journalEntry = JournalEntry::findOrFail($id);
+
+            return response()->json([
+                'result' => 'success',
+                'data' => $journalEntry
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'error',
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    public function post($id)
+    {
+        try {
+            $journalEntry = JournalEntry::findOrFail($id);
+
+            if ($journalEntry->status === 'posted') {
+                return response()->json([
+                    'result' => 'error',
+                    'message' => 'Journal Entry already posted'
+                ], 400);
+            }
+
+            $journalEntry->update([
+                'status' => 'posted'
+            ]);
+
+            return response()->json([
+                'result' => 'success',
+                'message' => 'Journal Entry posted successfully',
+                'data' => $journalEntry
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'error',
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
 }
