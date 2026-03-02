@@ -13,6 +13,7 @@ class AccountResource extends JsonResource
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
+            'name_ar' => $this->name_ar,
             'debit' => (float) $this->debit,
             'credit' => (float) $this->credit,
             'balance' => (float) $this->balance,

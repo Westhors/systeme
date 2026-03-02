@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
 
             $table->string('code')->unique();
-            $table->string('name');
+            $table->string('name')->nullable();
+            $table->string('name_ar')->nullable();
 
             $table->decimal('debit', 15, 2)->default(0);
             $table->decimal('credit', 15, 2)->default(0);

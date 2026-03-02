@@ -46,6 +46,7 @@ class AccountController extends Controller
                 'id' => $account->id,
                 'code' => $account->code,
                 'name' => $account->name,
+                'name_ar' => $account->name_ar,
                 'debit' => $account->debit,
                 'credit' => $account->credit,
                 'balance' => $account->balance,
