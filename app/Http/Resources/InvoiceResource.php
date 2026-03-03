@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class InvoiceResource extends JsonResource
@@ -17,6 +16,11 @@ class InvoiceResource extends JsonResource
             'customer' => [
                 'id'   => $this->customer?->id,
                 'name' => $this->customer?->name,
+            ],
+
+            'salesRepresentative' => [
+                'id'   => $this->salesRepresentative?->id,
+                'name' => $this->salesRepresentative?->name,
             ],
 
             'amounts' => [

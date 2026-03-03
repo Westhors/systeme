@@ -128,6 +128,7 @@ class InvoiceController extends Controller
             $invoice = Invoice::create([
                 'invoice_number'   => $invoiceNumber,
                 'customer_id'      => $request->customer_id,
+                'sales_representative_id' => $request->sales_representative_id,
                 'total_amount'     => $total,
                 'paid_amount'      => $paid,
                 'remaining_amount' => $total - $paid,
@@ -228,7 +229,7 @@ class InvoiceController extends Controller
                 'status'  => true,
                 'message' => 'Invoice created successfully',
                 'data'    => new InvoiceResource(
-                    $invoice->load(['items', 'payments', 'customer', 'shift'])
+                    $invoice->load(['items', 'payments', 'customer', 'shift', 'salesRepresentative'])
                 )
             ], 201);
 

@@ -22,4 +22,5 @@ class SalesRepresentative extends BaseModel
     {
         return $this->belongsTo(Employee::class);
     }
+    
 }
