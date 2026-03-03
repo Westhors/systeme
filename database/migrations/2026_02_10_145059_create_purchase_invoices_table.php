@@ -33,6 +33,7 @@ return new class extends Migration
             $table->decimal('discount_total', 12, 2)->default(0);
             $table->decimal('tax_total', 12, 2)->default(0);
             $table->decimal('total_amount', 12, 2)->default(0);
+            $table->decimal('paid_amount', 12, 2)->default(0);
 
             $table->softDeletes();
             $table->timestamps();
