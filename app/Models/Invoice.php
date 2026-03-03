@@ -27,7 +27,7 @@ class Invoice extends BaseModel
 
     public function salesRepresentative()
     {
-        return $this->belongsTo(salesRepresentative::class, 'sales_representative_id');
+        return $this->belongsTo(SalesRepresentative::class, 'sales_representative_id');
     }
 
     public function shift()
