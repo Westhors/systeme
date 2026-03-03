@@ -40,7 +40,7 @@ class PurchaseInvoiceController extends Controller
                 'due_date' => $request->due_date,
                 'payment_method' => $request->payment_method,
                 'note' => $request->note,
-
+                'paid_amount' => $request->paid_amount,
                 'subtotal' => $subtotal,
                 'discount_total' => $discountTotal,
                 'tax_total' => $taxTotal,

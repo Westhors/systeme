@@ -28,7 +28,7 @@ class PurchaseInvoiceResource extends JsonResource
             'due_date' => $this->due_date,
             'payment_method' => $this->payment_method,
             'note' => $this->note,
-
+            'paid_amount' => $this->paid_amount,
             'subtotal' => $this->subtotal,
             'discount_total' => $this->discount_total,
             'tax_total' => $this->tax_total,
