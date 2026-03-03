@@ -13,7 +13,7 @@ class JournalEntryController extends Controller
         DB::transaction(function () use ($request) {
 
             $entry = JournalEntry::create([
-                'entry_date'     => $request->date,
+                'entry_date' => $request->entry_date,
                 'description_ar' => $request->description_ar,
                 'description_en' => $request->description_en,
                 'notes'          => $request->notes,
