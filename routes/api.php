@@ -223,6 +223,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('customer/force-delete', [CustomerController::class, 'forceDelete']);
     Route::apiResource('customer', CustomerController::class);
 });
+Route::post('/customers/import', [CustomerController::class, 'importCustomers']);
+
 //////////////////////////////////////// customer ////////////////////////////////
 //////////////////////////////////////// customer ////////////////////////////////
 
@@ -373,6 +375,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/suppliers/{id}/{column}', [SuppliersController::class, 'toggle']);
     Route::apiResource('suppliers', SuppliersController::class);
 });
+Route::post('/suppliers/import', [SuppliersController::class, 'importSuppliers']);
+
 //////////////////////////////////////// suppliers ////////////////////////////////
 //////////////////////////////////////// suppliers ////////////////////////////////
 

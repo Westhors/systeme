@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Helpers\JsonResponse;
 use App\Http\Requests\SupplierRequest;
 use App\Http\Resources\SupplierResource;
+use App\Imports\SupplierImport;
 use App\Interfaces\SupplierRepositoryInterface;
 use App\Models\Supplier;
 use Exception;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SuppliersController extends BaseController
 {
@@ -96,6 +98,31 @@ class SuppliersController extends BaseController
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_FORCE_DELETED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
+        }
+    }
+
+    public function importSuppliers(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv'
+        ]);
+
+        try {
+
+            Excel::import(new SupplierImport, $request->file('file'));
+
+            return response()->json([
+                'status' => true,
+                'message' => 'تم استيراد الموردين بنجاح'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'حدث خطأ أثناء الاستيراد',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

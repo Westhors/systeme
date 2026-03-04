@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Helpers\JsonResponse;
 use App\Http\Requests\CustomerRequest;
 use App\Http\Resources\CustomerResource;
+use App\Imports\CustomerImport;
 use App\Interfaces\CustomerRepositoryInterface;
 use App\Models\Customer;
 use Exception;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CustomerController extends BaseController
 {
@@ -96,6 +98,31 @@ class CustomerController extends BaseController
             return JsonResponse::respondSuccess(trans(JsonResponse::MSG_FORCE_DELETED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
+        }
+    }
+
+    public function importCustomers(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv'
+        ]);
+
+        try {
+
+            Excel::import(new CustomerImport, $request->file('file'));
+
+            return response()->json([
+                'status' => true,
+                'message' => 'تم استيراد الزباين بنجاح'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'حدث خطأ أثناء الاستيراد',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
