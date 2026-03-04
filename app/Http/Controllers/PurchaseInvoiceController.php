@@ -50,6 +50,7 @@ class PurchaseInvoiceController extends Controller
 
             // إضافة الأصناف
             foreach ($request->items as $item) {
+                // إنشاء عنصر الفاتورة
                 PurchaseInvoiceItem::create([
                     'purchase_invoice_id' => $invoice->id,
                     'product_id' => $item['product_id'],
@@ -59,9 +60,30 @@ class PurchaseInvoiceController extends Controller
                     'tax' => $item['tax'] ?? 0,
                     'total' => ($item['quantity'] * $item['price']) - ($item['discount'] ?? 0) + ($item['tax'] ?? 0),
                 ]);
+
+                // تحديث المخزون العام للمنتج
                 $product = Product::find($item['product_id']);
                 if ($product) {
                     $product->increment('stock', $item['quantity']);
+                }
+
+                // 🔹 تحديث المخزون في pivot table product_warehouse
+                $pivot = \DB::table('product_warehouse')
+                    ->where('product_id', $item['product_id'])
+                    ->where('warehouse_id', $request->warehouse_id)
+                    ->first();
+
+                if ($pivot) {
+                    \DB::table('product_warehouse')
+                        ->where('product_id', $item['product_id'])
+                        ->where('warehouse_id', $request->warehouse_id)
+                        ->increment('stock', $item['quantity']);
+                } else {
+                    \DB::table('product_warehouse')->insert([
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $request->warehouse_id,
+                        'stock' => $item['quantity'],
+                    ]);
                 }
             }
 

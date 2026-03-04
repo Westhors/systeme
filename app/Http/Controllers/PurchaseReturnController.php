@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreReturnRequest;
 use App\Http\Resources\PurchaseReturnResource;
 use App\Models\Product;
+use App\Models\PurchaseInvoice;
 use App\Models\PurchaseReturn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -145,10 +146,27 @@ class PurchaseReturnController extends Controller
                     'unit_price' => $item['unit_price'],
                     'total_price' => $item['quantity'] * $item['unit_price']
                 ]);
-                // 🔹 إعادة الكمية للمخزون في جدول products
+
+                // 🔹 تحديث المخزون العام
                 $product = Product::find($item['product_id']);
                 if ($product) {
                     $product->decrement('stock', $item['quantity']);
+                }
+
+                // 🔹 تحديث المخزون في pivot table حسب مخزن الفاتورة
+                $invoice = PurchaseInvoice::find($request->purchase_invoices_id); // جلب الفاتورة
+                if ($invoice) {
+                    $pivot = \DB::table('product_warehouse')
+                        ->where('product_id', $item['product_id'])
+                        ->where('warehouse_id', $invoice->warehouse_id)
+                        ->first();
+
+                    if ($pivot) {
+                        \DB::table('product_warehouse')
+                            ->where('product_id', $item['product_id'])
+                            ->where('warehouse_id', $invoice->warehouse_id)
+                            ->decrement('stock', $item['quantity']);
+                    }
                 }
             }
 
