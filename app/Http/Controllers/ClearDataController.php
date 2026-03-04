@@ -16,11 +16,11 @@ class ClearDataController extends Controller
 {
     public function clearAll(Request $request)
     {
-        DB::beginTransaction();
-
         try {
+            // 1️⃣ إيقاف الـ foreign key checks
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
+            // 2️⃣ مسح البيانات
             Product::truncate();
             Category::truncate();
             Customer::truncate();
@@ -28,9 +28,8 @@ class ClearDataController extends Controller
             SalesInvoice::truncate();
             PurchaseInvoice::truncate();
 
+            // 3️⃣ تشغيل الـ foreign key checks
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
-            DB::commit();
 
             return response()->json([
                 'status' => true,
@@ -38,8 +37,8 @@ class ClearDataController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
 
+            // لو حصل خطأ هنا مش محتاج rollback لأنه خارج transaction
             return response()->json([
                 'status' => false,
                 'message' => 'حدث خطأ أثناء المسح',
