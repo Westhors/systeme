@@ -189,6 +189,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('product/force-delete', [ProductController::class, 'forceDelete']);
     Route::apiResource('product', ProductController::class);
 });
+Route::post('/products/import', [ProductController::class, 'importProducts']);
+
 //////////////////////////////////////// product ////////////////////////////////
 //////////////////////////////////////// product ////////////////////////////////
 
@@ -296,7 +298,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('attendance', AttendanceController::class);
 });
 Route::post('/attendance/import', [AttendanceController::class, 'importAttendance']);
-
 //////////////////////////////////////// Attendance ////////////////////////////////
 //////////////////////////////////////// Attendance ////////////////////////////////
 

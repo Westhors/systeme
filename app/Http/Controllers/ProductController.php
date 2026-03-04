@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Helpers\JsonResponse;
 use App\Http\Requests\ProductRequest;
 use App\Http\Resources\ProductResource;
+use App\Imports\ProductImport;
 use App\Interfaces\ProductRepositoryInterface;
 use App\Models\Product;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends BaseController
 {
@@ -223,6 +225,32 @@ class ProductController extends BaseController
                 'status'  => false,
                 'message' => 'حدث خطأ أثناء البحث',
                 'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function importProducts(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv'
+        ]);
+
+        try {
+
+            Excel::import(new ProductImport, $request->file('file'));
+
+            return response()->json([
+                'status' => true,
+                'message' => 'تم استيراد المنتجات بنجاح'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => false,
+                'message' => 'حدث خطأ أثناء الاستيراد',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
