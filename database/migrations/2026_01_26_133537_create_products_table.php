@@ -23,10 +23,13 @@ return new class extends Migration
             $table->integer('reorder_level')->default(0);
             $table->string('image_url')->nullable();
 
-            $table->foreignId('category_id')
-                ->constrained('categories')
-                ->cascadeOnDelete();
 
+
+            $table->foreignId('category_id')
+            ->constrained('categories')
+            ->cascadeOnDelete();
+
+            $table->boolean('beginning_balance')->default(false);
             $table->boolean('active')->default(true);
 
             $table->softDeletes();

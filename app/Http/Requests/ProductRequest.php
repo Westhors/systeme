@@ -34,6 +34,7 @@ class ProductRequest extends FormRequest
                 Rule::unique('products', 'barcode')->ignore($productId),
             ],
             'stock'           => 'nullable|integer|min:0',
+            'beginning_balance' => 'nullable|boolean',
             'reorder_level'   => 'nullable|integer|min:0',
             'price'           => 'nullable|numeric|min:0',
             'cost'            => 'nullable|numeric|min:0',

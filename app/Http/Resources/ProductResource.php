@@ -22,6 +22,7 @@ class ProductResource extends JsonResource
 
             'sku'           => $this->sku,
             'barcode'       => $this->barcode,
+            'beginning_balance' => $this->beginning_balance,
 
             // 👇 الكمية من المخزن
             'stock'         => $this->pivot->stock ?? 0,
