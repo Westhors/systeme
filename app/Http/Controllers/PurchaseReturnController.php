@@ -148,7 +148,7 @@ class PurchaseReturnController extends Controller
                 // 🔹 إعادة الكمية للمخزون في جدول products
                 $product = Product::find($item['product_id']);
                 if ($product) {
-                    $product->increment('stock', $item['quantity']);
+                    $product->decrement('stock', $item['quantity']);
                 }
             }
 
