@@ -141,7 +141,28 @@ class InvoiceController extends Controller
             |--------------------------------------------------------------------------
             */
             foreach ($request->items as $item) {
-                $invoice->items()->create([
+
+                $product = Product::find($item['product_id']);
+
+                // 🔹 تحقق من وجود المنتج وكفاية الكمية
+                if (!$product) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => "المنتج ID {$item['product_id']} غير موجود"
+                    ], 400);
+                }
+
+                if ($product->stock < $item['quantity']) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => "الكمية المتوفرة في المخزون للمنتج '{$product->name}' أقل من المطلوبة"
+                    ], 400);
+                }
+
+                // إنشاء العنصر في الفاتورة
+                $invoiceItem = $invoice->items()->create([
                     'product_id'   => $item['product_id'],
                     'product_name' => $item['product_name'] ?? 'Product',
                     'color'        => $item['color'] ?? null,
@@ -150,8 +171,10 @@ class InvoiceController extends Controller
                     'price'        => $item['price'],
                     'total'        => $item['price'] * $item['quantity'],
                 ]);
-            }
 
+                // خصم الكمية من المخزون
+                $product->decrement('stock', $item['quantity']);
+            }
             /*
             |--------------------------------------------------------------------------
             | إضافة المدفوعات

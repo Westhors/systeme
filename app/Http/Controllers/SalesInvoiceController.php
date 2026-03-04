@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSalesInvoiceRequest;
 use App\Http\Resources\SalesInvoiceResource;
+use App\Models\Product;
 use App\Models\SalesInvoice;
 use App\Models\SalesInvoiceItem;
 use Illuminate\Http\Request;
@@ -42,6 +43,19 @@ class SalesInvoiceController extends Controller
 
             // Create items
             foreach ($request->items as $item) {
+
+                $product = Product::findOrFail($item['product_id']);
+
+                // تحقق من كفاية الكمية
+                if ($product->stock < $item['quantity']) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => "الكمية المتوفرة في المخزون للمنتج '{$product->name}' أقل من المطلوبة"
+                    ], 400);
+                }
+
+                // إنشاء العنصر في الفاتورة
                 SalesInvoiceItem::create([
                     'sales_invoice_id' => $invoice->id,
                     'product_id' => $item['product_id'],
@@ -49,6 +63,9 @@ class SalesInvoiceController extends Controller
                     'price' => $item['price'],
                     'total' => $item['quantity'] * $item['price'],
                 ]);
+
+                // خصم الكمية من المخزون
+                $product->decrement('stock', $item['quantity']);
             }
 
             DB::commit();

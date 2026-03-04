@@ -6,6 +6,7 @@ use App\Http\Requests\PurchaseInvoiceRequest;
 use App\Http\Requests\PurchaseOrderRequest;
 use App\Http\Resources\PurchaseInvoiceResource;
 use App\Http\Resources\TransferResource;
+use App\Models\Product;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
 use App\Models\Transfer;
@@ -58,6 +59,10 @@ class PurchaseInvoiceController extends Controller
                     'tax' => $item['tax'] ?? 0,
                     'total' => ($item['quantity'] * $item['price']) - ($item['discount'] ?? 0) + ($item['tax'] ?? 0),
                 ]);
+                $product = Product::find($item['product_id']);
+                if ($product) {
+                    $product->increment('stock', $item['quantity']);
+                }
             }
 
             DB::commit();
@@ -76,93 +81,91 @@ class PurchaseInvoiceController extends Controller
         }
     }
 
+    public function treasuryMovements(Request $request)
+    {
+        try {
+            $filters   = $request->input('filters', []);
+            $orderBy   = $request->input('orderBy', 'id');
+            $orderDir  = $request->input('orderByDirection', 'desc');
+            $perPage   = $request->input('perPage', 10);
+            $paginate  = $request->boolean('paginate', true);
 
+            $query = Transfer::with([
+                'fromTreasury',
+                'toTreasury',
+                'fromBank',
+                'toBank'
+            ]);
 
-public function treasuryMovements(Request $request)
-{
-    try {
-        $filters   = $request->input('filters', []);
-        $orderBy   = $request->input('orderBy', 'id');
-        $orderDir  = $request->input('orderByDirection', 'desc');
-        $perPage   = $request->input('perPage', 10);
-        $paginate  = $request->boolean('paginate', true);
+            // ================= FILTERS =================
+            if (!empty($filters['treasury_id'])) {
+                $query->where(function ($q) use ($filters) {
+                    $q->where('from_treasury_id', $filters['treasury_id'])
+                    ->orWhere('to_treasury_id', $filters['treasury_id']);
+                });
+            }
 
-        $query = Transfer::with([
-            'fromTreasury',
-            'toTreasury',
-            'fromBank',
-            'toBank'
-        ]);
+            if (!empty($filters['type'])) {
+                $query->where('type', $filters['type']);
+            }
 
-        // ================= FILTERS =================
-        if (!empty($filters['treasury_id'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('from_treasury_id', $filters['treasury_id'])
-                  ->orWhere('to_treasury_id', $filters['treasury_id']);
-            });
-        }
+            if (!empty($filters['date_from'])) {
+                $query->whereDate('created_at', '>=', $filters['date_from']);
+            }
 
-        if (!empty($filters['type'])) {
-            $query->where('type', $filters['type']);
-        }
+            if (!empty($filters['date_to'])) {
+                $query->whereDate('created_at', '<=', $filters['date_to']);
+            }
 
-        if (!empty($filters['date_from'])) {
-            $query->whereDate('created_at', '>=', $filters['date_from']);
-        }
+            // ================= SORT =================
+            $query->orderBy($orderBy, $orderDir);
 
-        if (!empty($filters['date_to'])) {
-            $query->whereDate('created_at', '<=', $filters['date_to']);
-        }
+            // ================= PAGINATION =================
+            if ($paginate) {
+                $rows = $query->paginate($perPage);
 
-        // ================= SORT =================
-        $query->orderBy($orderBy, $orderDir);
+                return response()->json([
+                    'data' => TransferResource::collection($rows->items()),
 
-        // ================= PAGINATION =================
-        if ($paginate) {
-            $rows = $query->paginate($perPage);
+                    'links' => [
+                        'first' => $rows->url(1),
+                        'last'  => $rows->url($rows->lastPage()),
+                        'prev'  => $rows->previousPageUrl(),
+                        'next'  => $rows->nextPageUrl(),
+                    ],
+
+                    'meta' => [
+                        'current_page' => $rows->currentPage(),
+                        'from'         => $rows->firstItem(),
+                        'last_page'    => $rows->lastPage(),
+                        'per_page'     => $rows->perPage(),
+                        'total'        => $rows->total(),
+                    ],
+
+                    'result'  => 'Success',
+                    'message' => 'Treasury movements fetched successfully',
+                    'status'  => 200,
+                ]);
+            }
+
+            // ================= NON PAGINATED =================
+            $rows = $query->get();
 
             return response()->json([
-                'data' => TransferResource::collection($rows->items()),
-
-                'links' => [
-                    'first' => $rows->url(1),
-                    'last'  => $rows->url($rows->lastPage()),
-                    'prev'  => $rows->previousPageUrl(),
-                    'next'  => $rows->nextPageUrl(),
-                ],
-
-                'meta' => [
-                    'current_page' => $rows->currentPage(),
-                    'from'         => $rows->firstItem(),
-                    'last_page'    => $rows->lastPage(),
-                    'per_page'     => $rows->perPage(),
-                    'total'        => $rows->total(),
-                ],
-
+                'data' => TransferResource::collection($rows),
                 'result'  => 'Success',
                 'message' => 'Treasury movements fetched successfully',
                 'status'  => 200,
             ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'Error',
+                'message' => $e->getMessage(),
+                'status' => 500,
+            ]);
         }
-
-        // ================= NON PAGINATED =================
-        $rows = $query->get();
-
-        return response()->json([
-            'data' => TransferResource::collection($rows),
-            'result'  => 'Success',
-            'message' => 'Treasury movements fetched successfully',
-            'status'  => 200,
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'result' => 'Error',
-            'message' => $e->getMessage(),
-            'status' => 500,
-        ]);
     }
-}
 
     public function show($id)
     {
@@ -298,6 +301,5 @@ public function treasuryMovements(Request $request)
             ]);
         }
     }
-
 
 }

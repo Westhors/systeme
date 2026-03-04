@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReturnRequest;
 use App\Http\Resources\PurchaseReturnResource;
+use App\Models\Product;
 use App\Models\PurchaseReturn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -144,6 +145,11 @@ class PurchaseReturnController extends Controller
                     'unit_price' => $item['unit_price'],
                     'total_price' => $item['quantity'] * $item['unit_price']
                 ]);
+                // 🔹 إعادة الكمية للمخزون في جدول products
+                $product = Product::find($item['product_id']);
+                if ($product) {
+                    $product->increment('stock', $item['quantity']);
+                }
             }
 
             DB::commit();
