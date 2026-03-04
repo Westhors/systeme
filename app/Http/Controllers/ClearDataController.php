@@ -19,23 +19,16 @@ class ClearDataController extends Controller
         DB::beginTransaction();
 
         try {
-            // حذف الأصناف
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
             Product::truncate();
-
-            // حذف التصنيفات
             Category::truncate();
-
-            // حذف العملاء
             Customer::truncate();
-
-            // حذف الموردين
             Supplier::truncate();
-
-            // حذف فواتير المبيعات
             SalesInvoice::truncate();
-
-            // حذف فواتير المشتريات
             PurchaseInvoice::truncate();
+
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
             DB::commit();
 
