@@ -8,6 +8,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CashierShiftController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ClearDataController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\CustomerController;
@@ -548,3 +549,7 @@ Route::get('/journal-entries/reports', [JournalEntryController::class, 'reports'
 //////////////////////////////////////// logs ////////////////////////////////
 Route::get('activity-logs', [ActivityLogController::class, 'index']);
 //////////////////////////////////////// logs ////////////////////////////////
+
+//////////////////////////////////////// clearAll ////////////////////////////////
+Route::delete('clear-all', [ClearDataController::class, 'clearAll']);
+//////////////////////////////////////// clearAll ////////////////////////////////
