@@ -25,7 +25,7 @@ class ProductResource extends JsonResource
             'beginning_balance' => $this->beginning_balance,
 
             // 👇 الكمية من المخزن
-            'stock'         => $this->pivot->stock ?? 0,
+            'stock'         => $this->stock ?? 0,
 
             'reorder_level' => $this->reorder_level,
             'price'         => $this->price,
