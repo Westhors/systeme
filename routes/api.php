@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\BankController;
@@ -543,3 +544,7 @@ Route::get('/journal-entries/reports', [JournalEntryController::class, 'reports'
 //////////////////////////////////////// accounts ////////////////////////////////
 //////////////////////////////////////// accounts ////////////////////////////////
 
+
+//////////////////////////////////////// logs ////////////////////////////////
+Route::get('activity-logs', [ActivityLogController::class, 'index']);
+//////////////////////////////////////// logs ////////////////////////////////
