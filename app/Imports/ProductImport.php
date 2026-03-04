@@ -23,6 +23,7 @@ class ProductImport implements ToCollection, WithHeadingRow
                     'name'       => $row['name'],
                     'sku'        => $row['sku'],
                     'stock'      => $stock,
+                    'beginning_balance'      => 1, // ✅ تعيين بداية الرصيد تلقائي
                     'cost'       => $cost,
                     'total'      => $stock * $cost, // ✅ القيمة الإجمالية تلقائي
                     'date'       => now(), // ✅ التاريخ تلقائي
