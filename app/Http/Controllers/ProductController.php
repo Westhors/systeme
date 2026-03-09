@@ -37,53 +37,77 @@ class ProductController extends BaseController
         }
     }
 
-    public function store(ProductRequest $request)
-    {
-        DB::beginTransaction();
+   public function store(ProductRequest $request)
+{
+    DB::beginTransaction();
 
-        try {
-            $data = $request->validated();
+    try {
+        $data = $request->validated();
 
-            $product = $this->crudRepository->create(
-                collect($data)->except('units')->toArray()
-            );
+        $product = $this->crudRepository->create(
+            collect($data)->except('units')->toArray()
+        );
 
-            // ✅ تأكد إن units موجودة ومش فاضية
-            if (!empty($data['units']) && is_array($data['units'])) {
+        if (!empty($data['units']) && is_array($data['units'])) {
+            // إعادة تنظيم الوحدات
+            $organizedUnits = [];
 
-                foreach ($data['units'] as $unitData) {
+            foreach ($data['units'] as $unitData) {
+                $unitId = $unitData['unit_id'];
 
-                    $productUnit = $product->units()->create([
-                        'unit_id'     => $unitData['unit_id'],
-                        'cost_price'  => $unitData['cost_price'],
-                        'sell_price'  => $unitData['sell_price'],
-                        'barcode'     => $unitData['barcode'] ?? null,
-                    ]);
+                if (!isset($organizedUnits[$unitId])) {
+                    // أول مرة نشوف فيها الـ unit_id
+                    $organizedUnits[$unitId] = [
+                        'unit_id' => $unitId,
+                        'cost_price' => $unitData['cost_price'],
+                        'sell_price' => $unitData['sell_price'],
+                        'barcode' => $unitData['barcode'] ?? null,
+                        'colors' => []
+                    ];
+                }
 
-                    // ✅ تأكد إن colors موجودة
-                    if (!empty($unitData['colors']) && is_array($unitData['colors'])) {
-                        foreach ($unitData['colors'] as $colorData) {
-                            $productUnit->colors()->create([
-                                'color_id' => $colorData['color_id'],
-                                'stock'    => $colorData['stock'],
-                            ]);
-                        }
+                // إضافة الألوان
+                if (!empty($unitData['colors'])) {
+                    foreach ($unitData['colors'] as $colorData) {
+                        $organizedUnits[$unitId]['colors'][] = $colorData;
                     }
                 }
             }
 
-           if (request('image') !== null) {
-                $this->crudRepository->AddMediaCollection('image', $product);
+            // إدخال الوحدات المنظمة
+            foreach ($organizedUnits as $unitData) {
+                $productUnit = $product->units()->create([
+                    'unit_id'     => $unitData['unit_id'],
+                    'cost_price'  => $unitData['cost_price'],
+                    'sell_price'  => $unitData['sell_price'],
+                    'barcode'     => $unitData['barcode'] ?? null,
+                ]);
+
+                if (!empty($unitData['colors'])) {
+                    foreach ($unitData['colors'] as $colorData) {
+                        $productUnit->colors()->create([
+                            'color_id' => $colorData['color_id'],
+                            'stock'    => $colorData['stock'],
+                        ]);
+                    }
+                }
             }
-            DB::commit();
-
-            return new ProductResource($product->load('units.colors'));
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return JsonResponse::respondError($e->getMessage());
         }
+
+        if (request('image') !== null) {
+            $this->crudRepository->AddMediaCollection('image', $product);
+        }
+
+        DB::commit();
+
+        return new ProductResource($product->load('units.colors'));
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return JsonResponse::respondError($e->getMessage());
     }
+}
+
 
 
     public function show(Product $product): ?\Illuminate\Http\JsonResponse
@@ -96,70 +120,111 @@ class ProductController extends BaseController
     }
 
 
-    public function update(ProductRequest $request, Product $product)
-    {
-        DB::beginTransaction();
+public function update(ProductRequest $request, Product $product)
+{
+    DB::beginTransaction();
 
-        try {
-            $data = $request->validated();
+    try {
+        $data = $request->validated();
 
-            $this->crudRepository->update(
-                collect($data)->except('units')->toArray(),
-                $product->id
-            );
+        $this->crudRepository->update(
+            collect($data)->except('units')->toArray(),
+            $product->id
+        );
 
-            if ($request->hasFile('product_image')) {
-                $network = Product::find($product->id);
-                $this->crudRepository->AddMediaCollection('product_image', $network , 'product_image');
-            }
+        if (!empty($data['units']) && is_array($data['units'])) {
+            // تنظيم الوحدات وإزالة الألوان المكررة
+            $organizedUnits = [];
 
-            // حذف القديم
-            $product->units()->each(function ($unit) {
-                $unit->colors()->delete();
-                $unit->delete();
-            });
+            foreach ($data['units'] as $unitData) {
+                $unitId = $unitData['unit_id'];
 
-            // ✅ تأكد إن units موجودة
-            if (!empty($data['units']) && is_array($data['units'])) {
+                if (!isset($organizedUnits[$unitId])) {
+                    $organizedUnits[$unitId] = [
+                        'unit_id' => $unitId,
+                        'cost_price' => $unitData['cost_price'],
+                        'sell_price' => $unitData['sell_price'],
+                        'barcode' => $unitData['barcode'] ?? null,
+                        'colors' => []
+                    ];
+                }
 
-                foreach ($data['units'] as $unitData) {
+                // إزالة الألوان المكررة
+                if (!empty($unitData['colors'])) {
+                    foreach ($unitData['colors'] as $colorData) {
+                        $colorExists = false;
+                        foreach ($organizedUnits[$unitId]['colors'] as $existingColor) {
+                            if ($existingColor['color_id'] == $colorData['color_id']) {
+                                $colorExists = true;
+                                break;
+                            }
+                        }
 
-                    $productUnit = $product->units()->create([
-                        'unit_id'     => $unitData['unit_id'],
-                        'cost_price'  => $unitData['cost_price'],
-                        'sell_price'  => $unitData['sell_price'],
-                        'barcode'     => $unitData['barcode'] ?? null,
-                    ]);
-
-                    if (!empty($unitData['colors']) && is_array($unitData['colors'])) {
-                        foreach ($unitData['colors'] as $colorData) {
-                            $productUnit->colors()->create([
-                                'color_id' => $colorData['color_id'],
-                                'stock'    => $colorData['stock'],
-                            ]);
+                        if (!$colorExists) {
+                            $organizedUnits[$unitId]['colors'][] = $colorData;
                         }
                     }
                 }
             }
 
-            activity()
-                ->performedOn($product)
-                ->withProperties(['attributes' => $data])
-                ->log('update');
+            // الحصول على الـ unit_ids الموجودة حالياً
+            $existingUnitIds = $product->units()->pluck('unit_id')->toArray();
+            $newUnitIds = array_keys($organizedUnits);
 
-            DB::commit();
+            // حذف الوحدات التي لم تعد موجودة
+            $unitsToDelete = array_diff($existingUnitIds, $newUnitIds);
+            if (!empty($unitsToDelete)) {
+                $product->units()->whereIn('unit_id', $unitsToDelete)->each(function ($unit) {
+                    $unit->colors()->delete();
+                    $unit->delete();
+                });
+            }
 
-            return JsonResponse::respondSuccess(
-                trans(JsonResponse::MSG_UPDATED_SUCCESSFULLY),
-                new ProductResource($product->load('units.colors'))
-            );
+            // تحديث أو إضافة الوحدات الجديدة
+            foreach ($organizedUnits as $unitId => $unitData) {
+                // ✅ استخدام updateOrCreate بدلاً من create
+                $productUnit = $product->units()->updateOrCreate(
+                    ['unit_id' => $unitId],
+                    [
+                        'cost_price' => $unitData['cost_price'],
+                        'sell_price' => $unitData['sell_price'],
+                        'barcode' => $unitData['barcode'] ?? null,
+                    ]
+                );
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return JsonResponse::respondError($e->getMessage());
+                // حذف الألوان القديمة لهذه الوحدة
+                $productUnit->colors()->delete();
+
+                // إضافة الألوان الجديدة
+                if (!empty($unitData['colors'])) {
+                    foreach ($unitData['colors'] as $colorData) {
+                        $productUnit->colors()->create([
+                            'color_id' => $colorData['color_id'],
+                            'stock'    => $colorData['stock'],
+                        ]);
+                    }
+                }
+            }
+        } else {
+            // إذا ما فيش units، احذف كل الحجات القديمة
+            $product->units()->each(function ($unit) {
+                $unit->colors()->delete();
+                $unit->delete();
+            });
         }
-    }
 
+        DB::commit();
+
+        return JsonResponse::respondSuccess(
+            trans(JsonResponse::MSG_UPDATED_SUCCESSFULLY),
+            new ProductResource($product->load('units.colors'))
+        );
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return JsonResponse::respondError($e->getMessage());
+    }
+}
 
 
     public function destroy(Request $request): ?\Illuminate\Http\JsonResponse
