@@ -34,6 +34,22 @@ class Invoice extends BaseModel
     {
         return $this->belongsTo(CashierShift::class, 'cashier_shift_id');
     }
+     public function cashier()
+    {
+        return $this->belongsTo(Employee::class, 'cashier_id');
+    }
+
+    // ✅ إضافة علاقة الخزينة
+    public function treasury()
+    {
+        return $this->belongsTo(Treasury::class, 'treasury_id');
+    }
+
+    // ✅ إضافة علاقة حركات الخزينة
+    public function treasuryTransactions()
+    {
+        return $this->morphMany(TreasuryTransaction::class, 'reference');
+    }
 
 }
 
