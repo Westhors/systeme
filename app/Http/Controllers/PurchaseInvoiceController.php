@@ -283,4 +283,170 @@ class PurchaseInvoiceController extends Controller
             ]);
         }
     }
+
+  public function update(PurchaseInvoiceRequest $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            // جلب الفاتورة القديمة
+            $invoice = PurchaseInvoice::with('items')->findOrFail($id);
+            
+            // حفظ البيانات القديمة للمقارنة
+            $oldPaidAmount = $invoice->paid_amount;
+            $oldTreasuryId = $invoice->treasury_id;
+            $oldPaymentMethod = $invoice->payment_method;
+
+            // حساب المجاميع الجديدة
+            $subtotal = collect($request->items)->sum(fn($item) => $item['quantity'] * $item['price']);
+            $discountTotal = collect($request->items)->sum('discount');
+            $taxTotal = collect($request->items)->sum('tax');
+            $total = $subtotal - $discountTotal + $taxTotal;
+            $remaining = $total - ($request->paid_amount ?? 0);
+
+            // 1️⃣ **عكس حركات المخزون القديمة** (لأننا هنحدث الأصناف)
+            foreach ($invoice->items as $oldItem) {
+                // عكس المخزون العام
+                $product = Product::find($oldItem->product_id);
+                if ($product) {
+                    $product->decrement('stock', $oldItem->quantity);
+                }
+
+                // عكس المخزون في warehouse
+                DB::table('product_warehouse')
+                    ->where('product_id', $oldItem->product_id)
+                    ->where('warehouse_id', $invoice->warehouse_id)
+                    ->decrement('stock', $oldItem->quantity);
+            }
+
+            // 2️⃣ **حذف الأصناف القديمة**
+            PurchaseInvoiceItem::where('purchase_invoice_id', $invoice->id)->delete();
+
+            // 3️⃣ **تحديث الفاتورة بالبيانات الجديدة**
+            $invoice->update([
+                'supplier_id' => $request->supplier_id,
+                'branch_id' => $request->branch_id,
+                'warehouse_id' => $request->warehouse_id,
+                'currency_id' => $request->currency_id,
+                'tax_id' => $request->tax_id,
+                'treasury_id' => $request->treasury_id,
+                'invoice_date' => $request->invoice_date,
+                'due_date' => $request->due_date,
+                'payment_method' => $request->payment_method,
+                'note' => $request->note,
+                'paid_amount' => $request->paid_amount ?? 0,
+                'remaining_amount' => $remaining,
+                'subtotal' => $subtotal,
+                'discount_total' => $discountTotal,
+                'tax_total' => $taxTotal,
+                'total_amount' => $total,
+            ]);
+
+            // 4️⃣ **إضافة الأصناف الجديدة**
+            foreach ($request->items as $item) {
+                PurchaseInvoiceItem::create([
+                    'purchase_invoice_id' => $invoice->id,
+                    'product_id' => $item['product_id'],
+                    'product_variant_id' => $item['product_variant_id'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'discount' => $item['discount'] ?? 0,
+                    'tax' => $item['tax'] ?? 0,
+                    'total' => ($item['quantity'] * $item['price']) - ($item['discount'] ?? 0) + ($item['tax'] ?? 0),
+                ]);
+
+                // تحديث المخزون العام للصنف الجديد
+                $product = Product::find($item['product_id']);
+                if ($product) {
+                    $product->increment('stock', $item['quantity']);
+                }
+
+                // تحديث المخزون في warehouse
+                $pivot = DB::table('product_warehouse')
+                    ->where('product_id', $item['product_id'])
+                    ->where('warehouse_id', $request->warehouse_id)
+                    ->first();
+
+                if ($pivot) {
+                    DB::table('product_warehouse')
+                        ->where('product_id', $item['product_id'])
+                        ->where('warehouse_id', $request->warehouse_id)
+                        ->increment('stock', $item['quantity']);
+                } else {
+                    DB::table('product_warehouse')->insert([
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $request->warehouse_id,
+                        'stock' => $item['quantity'],
+                    ]);
+                }
+            }
+
+            // 5️⃣ **معالجة الخزينة - تحديث الحركات بناءً على التغيير**
+            
+            // حذف حركات الخزينة القديمة المرتبطة بالفاتورة
+            TreasuryTransaction::where('reference_type', PurchaseInvoice::class)
+                ->where('reference_id', $invoice->id)
+                ->delete();
+
+            // إعادة رصيد الخزينة القديم (عكس الحركة القديمة)
+            if ($oldPaymentMethod === 'cash' && $oldPaidAmount > 0 && $oldTreasuryId) {
+                $oldTreasury = Treasury::find($oldTreasuryId);
+                if ($oldTreasury) {
+                    $oldTreasury->increment('balance', $oldPaidAmount); // رجع الفلوس
+                }
+            }
+
+            // إنشاء حركة خزنية جديدة (إذا كانت الطريقة نقدي)
+            if ($request->payment_method === 'cash' && $request->paid_amount > 0 && $request->treasury_id) {
+                
+                // إنشاء حركة خزنية جديدة
+                TreasuryTransaction::create([
+                    'treasury_id' => $request->treasury_id,
+                    'reference_type' => PurchaseInvoice::class,
+                    'reference_id' => $invoice->id,
+                    'type' => 'out',
+                    'amount' => $request->paid_amount,
+                    'description' => "تحديث فاتورة مشتريات رقم {$invoice->invoice_number}",
+                    'created_at' => now(),
+                ]);
+
+                // تحديث رصيد الخزينة الجديد
+                $treasury = Treasury::find($request->treasury_id);
+                if ($treasury) {
+                    $treasury->decrement('balance', $request->paid_amount);
+                    
+                    Log::info("Treasury balance updated on invoice update", [
+                        'treasury_id' => $treasury->id,
+                        'amount' => $request->paid_amount,
+                        'invoice_id' => $invoice->id
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'data' => new PurchaseInvoiceResource($invoice->load('supplier', 'branch', 'warehouse', 'currency', 'tax', 'treasury', 'items.product')),
+                'result' => 'Success',
+                'message' => 'Purchase invoice updated successfully',
+                'status' => 200,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Purchase invoice update failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'invoice_id' => $id
+            ]);
+
+            return response()->json([
+                'result' => 'Error',
+                'message' => 'Failed to update purchase invoice',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
 }

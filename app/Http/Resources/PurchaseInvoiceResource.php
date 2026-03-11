@@ -26,7 +26,6 @@ class PurchaseInvoiceResource extends JsonResource
             // ✅ الخزينة
             'treasury_id' => $this->treasury_id,
             'treasury_name' => $this->treasury?->name,
-            'treasury_name_ar' => $this->treasury?->name_ar,
 
             'currency_id' => $this->currency_id,
             'currency_code' => $this->currency?->code,
@@ -45,7 +44,6 @@ class PurchaseInvoiceResource extends JsonResource
             'tax_total' => (float) $this->tax_total,
             'total_amount' => (float) $this->total_amount,
             'paid_amount' => (float) $this->paid_amount,
-            'remaining_amount' => (float) $this->remaining_amount,
 
             // ✅ الأصناف (مبسطة)
             'items' => $this->items->map(fn ($item) => [

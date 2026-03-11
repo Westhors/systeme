@@ -13,20 +13,16 @@ class EmployeeRequest extends FormRequest
 
     public function rules(): array
     {
-<<<<<<< HEAD
-      
-   $employee = $this->route('employee');
-    $id = $employee?->id;
-=======
         $id = $this->route('employee') ? $this->route('employee')->id : null;
 
->>>>>>> 8ebd9a501d15c28f2f9771f7bb31b132a89b5280
         return [
             'employee_code' => 'required|string|max:100|unique:employees,employee_code,' . $id,
             'name'          => 'required|string|max:255',
             'position'      => 'nullable|string|max:255',
             'department'    => 'nullable|string|max:255',
             'role_id'       => 'required|exists:roles,id',
+            'branch_id'     => 'nullable|exists:branches,id', // ✅ إضافة
+            'treasury_id'   => 'nullable|exists:treasuries,id', // ✅ إضافة
             'phone'         => 'nullable|string|max:20',
             'email'         => 'nullable|email|unique:employees,email,' . $id,
             'salary'        => 'nullable|numeric|min:0',
@@ -34,17 +30,18 @@ class EmployeeRequest extends FormRequest
         ];
     }
 
-
     public function messages(): array
     {
         return [
             'employee_code.required' => 'كود الموظف مطلوب',
             'employee_code.unique'   => 'كود الموظف مستخدم بالفعل',
+            'role_id.required'       => 'الصلاحية مطلوبة',
+            'role_id.exists'         => 'الصلاحية غير موجودة',
+            'branch_id.exists'       => 'الفرع غير موجود', // ✅ إضافة
+            'treasury_id.exists'     => 'الخزينة غير موجودة', // ✅ إضافة
             'email.unique'           => 'البريد الإلكتروني مستخدم بالفعل',
-            'salary.numeric'         => 'الراتب يجب أن يكون رقمًا صحيحًا',
+            'salary.numeric'         => 'الراتب يجب أن يكون رقمًا',
             'password.min'           => 'كلمة المرور يجب أن تكون على الأقل 6 أحرف',
         ];
     }
 }
-
-

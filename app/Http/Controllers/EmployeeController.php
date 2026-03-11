@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Hash;
 
 class EmployeeController extends BaseController
 {
-
     protected mixed $crudRepository;
 
     public function __construct(EmployeeRepositoryInterface $pattern)
@@ -21,19 +20,16 @@ class EmployeeController extends BaseController
         $this->crudRepository = $pattern;
     }
 
-    public function index()
-    {
-        try {
-            $employee = EmployeeResource::collection($this->crudRepository->all(
-                [],
-                [],
-                ['*']
-            ));
-            return $employee->additional(JsonResponse::success());
-        } catch (Exception $e) {
-            return JsonResponse::respondError($e->getMessage());
-        }
+  public function index()
+{
+    try {
+        $employees = Employee::with(['role', 'branch', 'treasury'])->get();
+        $employee = EmployeeResource::collection($employees);
+        return $employee->additional(JsonResponse::success());
+    } catch (Exception $e) {
+        return JsonResponse::respondError($e->getMessage());
     }
+}
     public function store(EmployeeRequest $request)
     {
         try {
@@ -45,6 +41,9 @@ class EmployeeController extends BaseController
             }
 
             $employee = $this->crudRepository->create($data);
+            
+            // تحميل العلاقات
+            $employee->load(['role', 'branch', 'treasury']);
 
             return new EmployeeResource($employee);
         } catch (Exception $e) {
@@ -52,18 +51,19 @@ class EmployeeController extends BaseController
         }
     }
 
-
     public function show(Employee $employee): ?\Illuminate\Http\JsonResponse
     {
         try {
+            // تحميل العلاقات
+            $employee->load(['role', 'branch', 'treasury']);
+            
             return JsonResponse::respondSuccess('Item Fetched Successfully', new EmployeeResource($employee));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
-
-  public function update(EmployeeRequest $request, Employee $employee)
+    public function update(EmployeeRequest $request, Employee $employee)
     {
         try {
             $data = $request->validated();
@@ -85,8 +85,6 @@ class EmployeeController extends BaseController
         }
     }
 
-
-
     public function destroy(Request $request): ?\Illuminate\Http\JsonResponse
     {
         try {
@@ -107,9 +105,6 @@ class EmployeeController extends BaseController
         }
     }
 
-
-
-
     public function forceDelete(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
@@ -119,5 +114,4 @@ class EmployeeController extends BaseController
             return JsonResponse::respondError($e->getMessage());
         }
     }
-
 }

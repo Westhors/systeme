@@ -398,7 +398,9 @@ Route::post('/suppliers/import', [SuppliersController::class, 'importSuppliers']
     Route::post('/purchases-invoices/store', [PurchaseInvoiceController::class, 'store']);
     Route::post('/purchases-invoices/index', [PurchaseInvoiceController::class, 'index']);
     Route::get('/purchases-invoices/{id}', [PurchaseInvoiceController::class, 'show']);
-//////////////////////////////////////// purchases-invoices ////////////////////////////////
+    Route::put('/purchases-invoices/update/{id}', [PurchaseInvoiceController::class, 'update']);
+
+    //////////////////////////////////////// purchases-invoices ////////////////////////////////
 //////////////////////////////////////// purchases-invoices ////////////////////////////////
 
 

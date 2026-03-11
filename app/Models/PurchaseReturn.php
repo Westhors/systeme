@@ -17,4 +17,14 @@ class PurchaseReturn extends BaseModel
     {
         return $this->belongsTo(PurchaseInvoice::class, 'purchase_invoices_id');
     }
+     public function treasury()
+    {
+        return $this->belongsTo(Treasury::class);
+    }
+
+    // ✅ علاقة حركات الخزينة
+    public function treasuryTransactions()
+    {
+        return $this->morphMany(TreasuryTransaction::class, 'reference');
+    }
 }

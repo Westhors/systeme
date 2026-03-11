@@ -7,8 +7,11 @@ use App\Http\Resources\PurchaseReturnResource;
 use App\Models\Product;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseReturn;
+use App\Models\Treasury;
+use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PurchaseReturnController extends Controller
 {
@@ -24,6 +27,7 @@ class PurchaseReturnController extends Controller
             $query = PurchaseReturn::with([
                 'purchaseInvoice',
                 'items.product',
+                'treasury', // ✅ إضافة علاقة الخزينة
             ]);
 
             // =========================
@@ -62,6 +66,10 @@ class PurchaseReturnController extends Controller
 
             if (!empty($filters['reason'])) {
                 $query->where('reason', 'like', '%' . $filters['reason'] . '%');
+            }
+
+            if (!empty($filters['treasury_id'])) { // ✅ فلتر الخزينة
+                $query->where('treasury_id', $filters['treasury_id']);
             }
 
             // =========================
@@ -129,16 +137,28 @@ class PurchaseReturnController extends Controller
         DB::beginTransaction();
 
         try {
+            // جلب الفاتورة الأصلية
+            $invoice = PurchaseInvoice::find($request->purchase_invoices_id);
+            
+            if (!$invoice) {
+                throw new \Exception('Invoice not found');
+            }
+
+            // حساب إجمالي المرتجع
             $total = collect($request->items)
                 ->sum(fn($i) => $i['quantity'] * $i['unit_price']);
 
+            // إنشاء المرتجع مع الخزينة (نفس خزينة الفاتورة)
             $return = PurchaseReturn::create([
                 'purchase_invoices_id' => $request->purchase_invoices_id,
                 'return_number' => 'PR-' . now()->format('Ymd') . '-' . rand(1000,9999),
                 'total_amount' => $total,
-                'reason' => $request->reason
+                'reason' => $request->reason,
+                'treasury_id' => $invoice->treasury_id, // ✅ نفس خزينة الفاتورة
+                'payment_method' => $invoice->payment_method, // ✅ نفس طريقة الدفع
             ]);
 
+            // إضافة الأصناف المرتجعة
             foreach ($request->items as $item) {
                 $return->items()->create([
                     'product_id' => $item['product_id'],
@@ -147,42 +167,101 @@ class PurchaseReturnController extends Controller
                     'total_price' => $item['quantity'] * $item['unit_price']
                 ]);
 
-                // 🔹 تحديث المخزون العام
+                // 🔹 تحديث المخزون العام (نقص)
                 $product = Product::find($item['product_id']);
                 if ($product) {
                     $product->decrement('stock', $item['quantity']);
                 }
 
-                // 🔹 تحديث المخزون في pivot table حسب مخزن الفاتورة
-                $invoice = PurchaseInvoice::find($request->purchase_invoices_id); // جلب الفاتورة
-                if ($invoice) {
-                    $pivot = \DB::table('product_warehouse')
+                // 🔹 تحديث المخزون في pivot table
+                $pivot = \DB::table('product_warehouse')
+                    ->where('product_id', $item['product_id'])
+                    ->where('warehouse_id', $invoice->warehouse_id)
+                    ->first();
+
+                if ($pivot) {
+                    \DB::table('product_warehouse')
                         ->where('product_id', $item['product_id'])
                         ->where('warehouse_id', $invoice->warehouse_id)
-                        ->first();
-
-                    if ($pivot) {
-                        \DB::table('product_warehouse')
-                            ->where('product_id', $item['product_id'])
-                            ->where('warehouse_id', $invoice->warehouse_id)
-                            ->decrement('stock', $item['quantity']);
-                    }
+                        ->decrement('stock', $item['quantity']);
+                } else {
+                    // لو مش موجود (مفروض يكون موجود)
+                    \DB::table('product_warehouse')->insert([
+                        'product_id' => $item['product_id'],
+                        'warehouse_id' => $invoice->warehouse_id,
+                        'stock' => 0 - $item['quantity'], // سالب!
+                    ]);
                 }
             }
 
+            // ✅ ✅ ✅ إعادة المبلغ للخزينة وتسجيل حركة (في حالة الدفع النقدي)
+            if ($invoice->payment_method === 'cash' && $invoice->treasury_id && $total > 0) {
+                
+                // 1. تحديث رصيد الخزينة (زيادة)
+                $treasury = Treasury::find($invoice->treasury_id);
+                if ($treasury) {
+                    $oldBalance = $treasury->balance;
+                    $treasury->increment('balance', $total);
+                    
+                    Log::info("Treasury balance increased from return", [
+                        'treasury_id' => $treasury->id,
+                        'old_balance' => $oldBalance,
+                        'new_balance' => $treasury->balance,
+                        'amount' => $total,
+                        'return_id' => $return->id,
+                        'invoice_id' => $invoice->id
+                    ]);
+                }
+
+                // 2. إنشاء حركة خزنية (داخل)
+                TreasuryTransaction::create([
+                    'treasury_id' => $invoice->treasury_id,
+                    'reference_type' => PurchaseReturn::class,
+                    'reference_id' => $return->id,
+                    'type' => 'in', // داخل للخزينة (مرتجع)
+                    'amount' => $total,
+                    'description' => "مرتجع مشتريات - فاتورة رقم {$invoice->invoice_number} - مرتجع رقم {$return->return_number}",
+                    'created_at' => now(),
+                ]);
+
+                // 3. تحديث المبلغ المدفوع في الفاتورة (لو حابب)
+                // $invoice->decrement('paid_amount', $total);
+                // $invoice->increment('remaining_amount', $total);
+            }
+
             DB::commit();
+
+            // تحميل العلاقات للـ resource
+            $return->load(['items.product', 'purchaseInvoice', 'treasury']);
 
             return new PurchaseReturnResource($return);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+            
+            Log::error('Purchase return creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            
+            return response()->json([
+                'result' => 'Error',
+                'message' => 'Failed to create purchase return',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
     }
 
     public function show($id)
     {
-        $return = PurchaseReturn::with('items.product', 'purchaseInvoice')->findOrFail($id);
+        $return = PurchaseReturn::with([
+            'items.product', 
+            'purchaseInvoice',
+            'treasury', // ✅ إضافة الخزينة
+            'treasuryTransactions' // ✅ إضافة حركات الخزينة
+        ])->findOrFail($id);
+        
         return new PurchaseReturnResource($return);
     }
 }
