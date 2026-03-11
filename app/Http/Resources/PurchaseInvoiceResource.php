@@ -13,39 +13,52 @@ class PurchaseInvoiceResource extends JsonResource
             'id' => $this->id,
             'invoice_number' => $this->invoice_number,
 
-            'supplier' => [
-                'id' => $this->supplier?->id,
-                'name' => $this->supplier?->name,
-            ],
+            'supplier_id' => $this->supplier_id,
+            'supplier_name' => $this->supplier?->name,
+            'supplier_name_ar' => $this->supplier?->name_ar,
 
-            'branch' => $this->branch?->name,
-            'warehouse' => $this->warehouse?->name,
+            'branch_id' => $this->branch_id,
+            'branch_name' => $this->branch?->name,
+            
+            'warehouse_id' => $this->warehouse_id,
+            'warehouse_name' => $this->warehouse?->name,
 
-            'currency' => $this->currency?->code,
-            'tax' => $this->tax?->name,
+            // ✅ الخزينة
+            'treasury_id' => $this->treasury_id,
+            'treasury_name' => $this->treasury?->name,
+            'treasury_name_ar' => $this->treasury?->name_ar,
+
+            'currency_id' => $this->currency_id,
+            'currency_code' => $this->currency?->code,
+            
+            'tax_id' => $this->tax_id,
+            'tax_rate' => $this->tax?->rate,
 
             'invoice_date' => $this->invoice_date,
             'due_date' => $this->due_date,
             'payment_method' => $this->payment_method,
             'note' => $this->note,
-            'paid_amount' => $this->paid_amount,
-            'subtotal' => $this->subtotal,
-            'discount_total' => $this->discount_total,
-            'tax_total' => $this->tax_total,
-            'total_amount' => $this->total_amount,
+            
+            // ✅ المبالغ
+            'subtotal' => (float) $this->subtotal,
+            'discount_total' => (float) $this->discount_total,
+            'tax_total' => (float) $this->tax_total,
+            'total_amount' => (float) $this->total_amount,
+            'paid_amount' => (float) $this->paid_amount,
+            'remaining_amount' => (float) $this->remaining_amount,
 
+            // ✅ الأصناف (مبسطة)
             'items' => $this->items->map(fn ($item) => [
                 'product_id' => $item->product_id,
                 'product_name' => $item->product?->name,
                 'quantity' => $item->quantity,
-                'price' => $item->price,
-                'discount' => $item->discount,
-                'tax' => $item->tax,
-                'total' => $item->total,
+                'price' => (float) $item->price,
+                'discount' => (float) $item->discount,
+                'tax' => (float) $item->tax,
+                'total' => (float) $item->total,
             ]),
 
             'created_at' => $this->created_at->format('Y-m-d H:i'),
         ];
     }
 }
-

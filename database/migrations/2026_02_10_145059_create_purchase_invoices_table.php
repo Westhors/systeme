@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained()->cascadeOnDelete();
             $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('warehouse_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('treasury_id')->nullable()->constrained()->nullOnDelete();
 
             $table->foreignId('currency_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('tax_id')->nullable()->constrained()->nullOnDelete();

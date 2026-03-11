@@ -38,4 +38,14 @@ class PurchaseInvoice extends BaseModel
         return $this->hasMany(PurchaseInvoiceItem::class);
     }
 
+       public function treasury()
+    {
+        return $this->belongsTo(Treasury::class);
+    }
+
+    // ✅ إضافة علاقة حركات الخزينة (polymorphic)
+    public function treasuryTransactions()
+    {
+        return $this->morphMany(TreasuryTransaction::class, 'reference');
+    }
 }
