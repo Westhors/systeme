@@ -23,10 +23,26 @@ class InvoiceResource extends JsonResource
                 'name' => $this->salesRepresentative?->name,
             ],
 
+            // ✅ إضافة الكاشير (الموظف اللي سجل الفاتورة)
+            'cashier' => $this->cashier ? [
+                'id'          => $this->cashier->id,
+                'name'        => $this->cashier->name,
+                'name_ar'     => $this->cashier->name_ar,
+                'employee_code' => $this->cashier->employee_code,
+            ] : null,
+
+            // ✅ إضافة الخزينة
+            'treasury' => $this->treasury ? [
+                'id'          => $this->treasury->id,
+                'name'        => $this->treasury->name,
+                'name_ar'     => $this->treasury->name_ar,
+                'is_main'     => $this->treasury->is_main,
+            ] : null,
+
             'amounts' => [
-                'total'     => $this->total_amount,
-                'paid'      => $this->paid_amount,
-                'remaining' => $this->remaining_amount,
+                'total'     => (float) $this->total_amount,
+                'paid'      => (float) $this->paid_amount,
+                'remaining' => (float) $this->remaining_amount,
             ],
 
             'items' => InvoiceItemResource::collection($this->items),

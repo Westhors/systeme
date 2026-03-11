@@ -12,14 +12,15 @@ use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
 use App\Models\LoyaltySetting;
 use App\Models\Product;
-use App\Models\ReturnInvoice;
+use App\Models\Treasury;
+use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
-
-  public function invoiceIndex(Request $request)
+    public function invoiceIndex(Request $request)
     {
         try {
             $filters = $request->input('filters', []);
@@ -28,7 +29,13 @@ class InvoiceController extends Controller
             $perPage = $request->input('perPage', 10);
             $paginate = $request->boolean('paginate', true);
 
-            $query = Invoice::with(['customer']);
+            $query = Invoice::with([
+                'customer', 
+                'cashier', 
+                'treasury', 
+                'salesRepresentative',
+                'shift'
+            ]);
 
             // =========================
             // FILTERS
@@ -44,6 +51,14 @@ class InvoiceController extends Controller
 
             if (!empty($filters['status'])) {
                 $query->where('status', $filters['status']);
+            }
+
+            if (!empty($filters['cashier_id'])) {
+                $query->where('cashier_id', $filters['cashier_id']);
+            }
+
+            if (!empty($filters['treasury_id'])) {
+                $query->where('treasury_id', $filters['treasury_id']);
             }
 
             if (!empty($filters['date_from'])) {
@@ -111,24 +126,62 @@ class InvoiceController extends Controller
         }
     }
 
-
     public function store(Request $request)
     {
         DB::beginTransaction();
 
         try {
+            // ✅ جلب المستخدم الحالي
+            $user = auth()->user();
+            
+            // ✅ تحديد cashier_id (الموظف) و treasury_id (الخزينة بتاعته)
+            $cashierId = null;
+            $treasuryId = null;
+            
+            if ($user instanceof Employee) {
+                $cashierId = $user->id;
+                $treasuryId = $user->treasury_id; // الخزينة بتاعة الموظف من جدول employees
+                
+                // التحقق من وجود خزينة للموظف
+                if (!$treasuryId) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'الموظف ليس لديه خزينة مخصصة. يرجى تحديث بيانات الموظف'
+                    ], 400);
+                }
+            } elseif ($user instanceof Admin) {
+                // لو admin، نستخدم أول خزينة رئيسية
+                $cashierId = null;
+                $mainTreasury = Treasury::where('is_main', true)->first();
+                $treasuryId = $mainTreasury?->id;
+                
+                if (!$treasuryId) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'لا توجد خزينة رئيسية. يرجى إنشاء خزينة أولاً'
+                    ], 400);
+                }
+            }
 
+            // حساب المجاميع
             $total = collect($request->items)
                 ->sum(fn ($item) => $item['price'] * $item['quantity']);
 
             $paid = collect($request->payments)->sum('amount');
+            $cashPaid = collect($request->payments)->where('method', 'cash')->sum('amount');
+            $cardPaid = collect($request->payments)->where('method', 'card')->sum('amount');
 
             $invoiceNumber = 'INV-' . now()->format('Ymd') . '-' . rand(1000, 9999);
 
+            // ✅ إنشاء الفاتورة مع cashier_id و treasury_id
             $invoice = Invoice::create([
                 'invoice_number'   => $invoiceNumber,
                 'customer_id'      => $request->customer_id,
                 'sales_representative_id' => $request->sales_representative_id,
+                'cashier_id'       => $cashierId,
+                'treasury_id'      => $treasuryId,
                 'total_amount'     => $total,
                 'paid_amount'      => $paid,
                 'remaining_amount' => $total - $paid,
@@ -141,10 +194,8 @@ class InvoiceController extends Controller
             |--------------------------------------------------------------------------
             */
             foreach ($request->items as $item) {
-
                 $product = Product::find($item['product_id']);
 
-                // 🔹 تحقق من وجود المنتج وكفاية الكمية
                 if (!$product) {
                     DB::rollBack();
                     return response()->json([
@@ -161,10 +212,9 @@ class InvoiceController extends Controller
                     ], 400);
                 }
 
-                // إنشاء العنصر في الفاتورة
-                $invoiceItem = $invoice->items()->create([
+                $invoice->items()->create([
                     'product_id'   => $item['product_id'],
-                    'product_name' => $item['product_name'] ?? 'Product',
+                    'product_name' => $item['product_name'] ?? $product->name,
                     'color'        => $item['color'] ?? null,
                     'size'         => $item['size'] ?? null,
                     'quantity'     => $item['quantity'],
@@ -172,9 +222,9 @@ class InvoiceController extends Controller
                     'total'        => $item['price'] * $item['quantity'],
                 ]);
 
-                // خصم الكمية من المخزون
                 $product->decrement('stock', $item['quantity']);
             }
+
             /*
             |--------------------------------------------------------------------------
             | إضافة المدفوعات
@@ -189,18 +239,53 @@ class InvoiceController extends Controller
 
             /*
             |--------------------------------------------------------------------------
+            | ✅ ✅ ✅ الفلوس تروح للخزينة بتاعة الموظف (للمدفوعات النقدية فقط)
+            |--------------------------------------------------------------------------
+            */
+            if ($cashPaid > 0 && $treasuryId) {
+                // 1. زيادة رصيد الخزينة
+                $treasury = Treasury::find($treasuryId);
+                if ($treasury) {
+                    $oldBalance = $treasury->balance;
+                    $treasury->increment('balance', $cashPaid);
+                    
+                    Log::info("💰 Treasury balance increased from invoice", [
+                        'treasury_id' => $treasury->id,
+                        'treasury_name' => $treasury->name,
+                        'cashier_id' => $cashierId,
+                        'cashier_name' => $user?->name,
+                        'old_balance' => $oldBalance,
+                        'new_balance' => $treasury->balance,
+                        'amount' => $cashPaid,
+                        'invoice_id' => $invoice->id,
+                        'invoice_number' => $invoice->invoice_number
+                    ]);
+                }
+
+                // 2. إنشاء حركة خزنية (داخل)
+                TreasuryTransaction::create([
+                    'treasury_id' => $treasuryId,
+                    'reference_type' => Invoice::class,
+                    'reference_id' => $invoice->id,
+                    'type' => 'in', // داخل للخزينة (إيراد)
+                    'amount' => $cashPaid,
+                    'description' => "فاتورة مبيعات رقم {$invoice->invoice_number} - كاشير: " . ($user?->name ?? 'مدير'),
+                    'created_by' => $user?->id,
+                    'created_at' => now(),
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
             | تحديث نقاط الولاء
             |--------------------------------------------------------------------------
             */
             $loyaltySetting = LoyaltySetting::first();
 
             if ($loyaltySetting && $loyaltySetting->point_value > 0) {
-
                 $customer = Customer::find($request->customer_id);
-
                 if ($customer) {
                     $earnedPoints = floor($paid / $loyaltySetting->point_value);
-
                     $customer->point = ($customer->point ?? 0) + $earnedPoints;
                     $customer->last_paid_amount = $paid;
                     $customer->save();
@@ -212,8 +297,6 @@ class InvoiceController extends Controller
             | ربط الفاتورة بالوردية المفتوحة + تحديث مبيعاتها
             |--------------------------------------------------------------------------
             */
-            $user = auth()->user();
-
             $shift = CashierShift::where('status', 'open')
                 ->where(function ($q) use ($user) {
                     if ($user instanceof Admin) {
@@ -226,24 +309,10 @@ class InvoiceController extends Controller
                 ->first();
 
             if ($shift) {
-
-                // ربط الفاتورة بالوردية
-                $invoice->update([
-                    'cashier_shift_id' => $shift->id
-                ]);
-
-                // حساب المدفوعات حسب الطريقة
-                $cash = collect($request->payments)
-                    ->where('method', 'cash')
-                    ->sum('amount');
-
-                $card = collect($request->payments)
-                    ->where('method', 'card')
-                    ->sum('amount');
-
-                // تحديث مبيعات الوردية
-                $shift->increment('cash_sales', $cash);
-                $shift->increment('card_sales', $card);
+                $invoice->update(['cashier_shift_id' => $shift->id]);
+                
+                $shift->increment('cash_sales', $cashPaid);
+                $shift->increment('card_sales', $cardPaid);
             }
 
             DB::commit();
@@ -252,12 +321,19 @@ class InvoiceController extends Controller
                 'status'  => true,
                 'message' => 'Invoice created successfully',
                 'data'    => new InvoiceResource(
-                    $invoice->load(['items', 'payments', 'customer', 'shift', 'salesRepresentative'])
+                    $invoice->load([
+                        'items', 
+                        'payments', 
+                        'customer', 
+                        'shift', 
+                        'salesRepresentative',
+                        'cashier',
+                        'treasury'
+                    ])
                 )
             ], 201);
 
         } catch (\Exception $e) {
-
             DB::rollBack();
 
             return response()->json([
@@ -267,7 +343,6 @@ class InvoiceController extends Controller
         }
     }
 
-
     public function searchByInvoiceNumber(Request $request)
     {
         $request->validate([
@@ -275,7 +350,13 @@ class InvoiceController extends Controller
         ]);
 
         try {
-            $invoice = Invoice::with(['items.product', 'customer'])
+            $invoice = Invoice::with([
+                'items.product', 
+                'customer',
+                'cashier',
+                'treasury',
+                'salesRepresentative'
+            ])
                 ->where('invoice_number', $request->query('invoice_number'))
                 ->first();
 
@@ -289,7 +370,7 @@ class InvoiceController extends Controller
             return response()->json([
                 'status'  => true,
                 'message' => 'تم العثور على الفاتورة',
-                'data'    => $invoice
+                'data'    => new InvoiceResource($invoice)
             ]);
 
         } catch (\Exception $e) {
@@ -301,5 +382,29 @@ class InvoiceController extends Controller
         }
     }
 
+    public function show($id)
+    {
+        try {
+            $invoice = Invoice::with([
+                'items', 
+                'payments', 
+                'customer', 
+                'shift', 
+                'salesRepresentative',
+                'cashier',
+                'treasury'
+            ])->findOrFail($id);
 
+            return response()->json([
+                'status' => true,
+                'data' => new InvoiceResource($invoice)
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

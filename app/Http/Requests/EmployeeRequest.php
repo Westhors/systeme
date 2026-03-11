@@ -21,8 +21,8 @@ class EmployeeRequest extends FormRequest
             'position'      => 'nullable|string|max:255',
             'department'    => 'nullable|string|max:255',
             'role_id'       => 'required|exists:roles,id',
-            'branch_id'     => 'nullable|exists:branches,id', // ✅ إضافة
-            'treasury_id'   => 'nullable|exists:treasuries,id', // ✅ إضافة
+            'branch_id'     => 'required|exists:branches,id', // ✅ إضافة
+            'treasury_id'   => 'required|exists:treasuries,id', // ✅ إضافة
             'phone'         => 'nullable|string|max:20',
             'email'         => 'nullable|email|unique:employees,email,' . $id,
             'salary'        => 'nullable|numeric|min:0',
