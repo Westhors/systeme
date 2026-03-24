@@ -190,6 +190,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/product/{id}/{column}', [ProductController::class, 'toggle']);
     Route::delete('product/force-delete', [ProductController::class, 'forceDelete']);
     Route::apiResource('product', ProductController::class);
+        Route::post('/products/by-branch', [ProductController::class, 'getProductsByBranch']);
+
 });
 Route::post('/products/import', [ProductController::class, 'importProducts']);
 
@@ -504,6 +506,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/treasury/index', [TreasuryController::class, 'index']);
     Route::post('treasury/restore', [TreasuryController::class, 'restore']);
+    Route::put('treasury/update/{id}', [TreasuryController::class, 'update']);
     Route::delete('treasury/delete', [TreasuryController::class, 'destroy']);
     Route::put('/treasury/{id}/{column}', [TreasuryController::class, 'toggle']);
     Route::delete('treasury/force-delete', [TreasuryController::class, 'forceDelete']);

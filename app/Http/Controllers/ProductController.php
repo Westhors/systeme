@@ -294,6 +294,27 @@ public function update(ProductRequest $request, Product $product)
         }
     }
 
+  public function getProductsByBranch(Request $request)
+    {
+        $data = $request->validate([
+            'branch_id' => 'nullable|exists:branches,id',
+            'category_id' => 'nullable|exists:categories,id',
+        ]);
+
+        $products = Product::with('category')
+            ->when($data['branch_id'] ?? null, function ($query) use ($data) {
+                $query->whereHas('purchaseInvoiceItems.invoice', function ($q) use ($data) {
+                    $q->where('branch_id', $data['branch_id']);
+                });
+            })
+            ->when($data['category_id'] ?? null, function ($query) use ($data) {
+                $query->where('category_id', $data['category_id']);
+            })
+            ->distinct()
+            ->get();
+
+        return ProductResource::collection($products);
+    }
 
     public function importProducts(Request $request)
     {

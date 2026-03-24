@@ -14,6 +14,8 @@ class ProductUnitColorResource extends JsonResource
             'color_id'  => $this->color_id,
             'color'     => optional($this->color)->name,
             'stock'     => $this->stock,
+                       'hex_code'  => optional($this->color)->hex_code,
+
         ];
     }
 }
