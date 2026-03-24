@@ -18,6 +18,7 @@ class Transfer extends Model
         'amount',
         'currency',
         'notes',
+        'created_by', 
     ];
 
     public function fromTreasury() { return $this->belongsTo(Treasury::class, 'from_treasury_id'); }
