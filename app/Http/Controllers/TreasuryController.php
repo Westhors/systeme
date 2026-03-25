@@ -9,11 +9,10 @@ use App\Interfaces\TreasuryRepositoryInterface;
 use App\Models\Treasury;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class TreasuryController extends BaseController
 {
+
     protected mixed $crudRepository;
 
     public function __construct(TreasuryRepositoryInterface $pattern)
@@ -24,15 +23,12 @@ class TreasuryController extends BaseController
     public function index()
     {
         try {
-            $treasuries = $this->crudRepository->all(
+            $Treasury = TreasuryResource::collection($this->crudRepository->all(
                 [],
-                ['branch'],
+                [],
                 ['*']
-            );
-
-            return TreasuryResource::collection($treasuries)
-                ->additional(JsonResponse::success());
-
+            ));
+            return $Treasury->additional(JsonResponse::success());
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
@@ -41,169 +37,66 @@ class TreasuryController extends BaseController
     public function store(TreasuryRequest $request)
     {
         try {
-            DB::beginTransaction();
-
-            $data = $request->validated();
-
-            // التحقق من العملات
-            if (isset($data['currencies']) && is_array($data['currencies'])) {
-                foreach ($data['currencies'] as $currency) {
-                    if (!isset($currency['currency_id']) || $currency['currency_id'] <= 0) {
-                        throw new Exception('Invalid currency ID');
-                    }
-                }
-            }
-
-            // تجهيز البيانات للحفظ
-            $treasuryData = [
-                'name' => $data['name'],
-                'code' => $data['code'] ?? null,
-                'branch_id' => $data['branch_id'] ?? null,
-                'is_main' => $data['is_main'] ?? false,
-                'notes' => $data['notes'] ?? null,
-                'currencies' => $data['currencies'] ?? [],
-            ];
-
-            $treasury = $this->crudRepository->create($treasuryData);
-
-            DB::commit();
-
-            return JsonResponse::respondSuccess(
-                trans(JsonResponse::MSG_ADDED_SUCCESSFULLY),
-                new TreasuryResource($treasury->load('branch'))
-            );
-
-        } catch (ValidationException $e) {
-            DB::rollBack();
-            return JsonResponse::respondError($e->getMessage(), $e->errors());
+            $Treasury = $this->crudRepository->create($request->validated());
+            return new TreasuryResource($Treasury);
         } catch (Exception $e) {
-            DB::rollBack();
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
-    public function show(Treasury $treasury)
+    public function show(Treasury $Treasury): ?\Illuminate\Http\JsonResponse
     {
         try {
-            $treasury->load('branch');
-
-            return JsonResponse::respondSuccess(
-                'Item Fetched Successfully',
-                new TreasuryResource($treasury)
-            );
-
+            return JsonResponse::respondSuccess('Item Fetched Successfully', new TreasuryResource($Treasury));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
-    public function update(TreasuryRequest $request, $id)
+
+    public function update(TreasuryRequest $request, Treasury $Treasury)
     {
         try {
-            DB::beginTransaction();
-
-            $data = $request->validated();
-
-            // التحقق من العملات
-            if (isset($data['currencies']) && is_array($data['currencies'])) {
-                foreach ($data['currencies'] as $currency) {
-                    if (!isset($currency['currency_id']) || $currency['currency_id'] <= 0) {
-                        throw new Exception('Invalid currency ID');
-                    }
-                }
-            }
-
-            // تجهيز البيانات للتحديث
-            $treasuryData = [
-                'name' => $data['name'],
-                'code' => $data['code'] ?? null,
-                'branch_id' => $data['branch_id'] ?? null,
-                'is_main' => $data['is_main'] ?? false,
-                'notes' => $data['notes'] ?? null,
-            ];
-
-            // تحديث العملات لو موجودة
-            if (isset($data['currencies'])) {
-                $treasuryData['currencies'] = $data['currencies'];
-            }
-
-            // التحقق من عدم تكرار الكود (باستثناء نفس السجل)
-            if (isset($data['code']) && !empty($data['code'])) {
-                $existingTreasury = Treasury::where('code', $data['code'])
-                    ->where('id', '!=', $id)
-                    ->first();
-
-                if ($existingTreasury) {
-                    throw ValidationException::withMessages([
-                        'code' => ['الكود مستخدم بالفعل في خزينة أخرى']
-                    ]);
-                }
-            }
-
-            $this->crudRepository->update($treasuryData, $id);
-
-            $treasury = Treasury::with('branch')->find($id);
-
-            activity()
-                ->performedOn($treasury)
-                ->withProperties(['attributes' => $treasury])
-                ->log('update');
-
-            DB::commit();
-
-            return JsonResponse::respondSuccess(
-                trans(JsonResponse::MSG_UPDATED_SUCCESSFULLY),
-                new TreasuryResource($treasury)
-            );
-
-        } catch (ValidationException $e) {
-            DB::rollBack();
-            return JsonResponse::respondError($e->getMessage(), $e->errors());
+            $this->crudRepository->update($request->validated(), $Treasury->id);
+            activity()->performedOn($Treasury)->withProperties(['attributes' => $Treasury])->log('update');
+            return JsonResponse::respondSuccess(trans(JsonResponse::MSG_UPDATED_SUCCESSFULLY));
         } catch (Exception $e) {
-            DB::rollBack();
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
-    public function destroy(Request $request)
+
+    public function destroy(Request $request): ?\Illuminate\Http\JsonResponse
     {
         try {
             $this->crudRepository->deleteRecords('treasuries', $request['items']);
-
-            return JsonResponse::respondSuccess(
-                trans(JsonResponse::MSG_DELETED_SUCCESSFULLY)
-            );
-
+            return JsonResponse::respondSuccess(trans(JsonResponse::MSG_DELETED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
-    public function restore(Request $request)
+    public function restore(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $this->crudRepository->restoreItem(Treasury::class, $request['items']);
-
-            return JsonResponse::respondSuccess(
-                trans(JsonResponse::MSG_RESTORED_SUCCESSFULLY)
-            );
-
+            return JsonResponse::respondSuccess(trans(JsonResponse::MSG_RESTORED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
 
-    public function forceDelete(Request $request)
+
+
+
+    public function forceDelete(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $this->crudRepository->deleteRecordsFinial(Treasury::class, $request['items']);
-
-            return JsonResponse::respondSuccess(
-                trans(JsonResponse::MSG_FORCE_DELETED_SUCCESSFULLY)
-            );
-
+            return JsonResponse::respondSuccess(trans(JsonResponse::MSG_FORCE_DELETED_SUCCESSFULLY));
         } catch (Exception $e) {
             return JsonResponse::respondError($e->getMessage());
         }
     }
+
 }
