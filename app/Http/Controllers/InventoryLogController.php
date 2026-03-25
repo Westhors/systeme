@@ -131,5 +131,12 @@ class InventoryLogController extends BaseController
             ], 500);
         }
     }
-
+    public function show(InventoryLog $inventoryLog)
+    {
+        return response()->json([
+            'result' => 'Success',
+            'message' => 'Inventory log details fetched successfully',
+            'data' => new InventoryLogResource($inventoryLog),
+        ]);
+    }
 }
