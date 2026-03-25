@@ -134,7 +134,7 @@ class OfferController extends BaseController
 
             return JsonResponse::respondSuccess([
                 'total_offers'     => Offer::count(),
-                'active_offers'    => Offer::where('is_active', true)
+                'active_offers'    => Offer::where('active', true)
                     ->whereRaw(
                         "CONCAT(start_date, ' ', start_time) <= ?
                         AND CONCAT(end_date, ' ', end_time) >= ?",
