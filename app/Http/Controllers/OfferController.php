@@ -39,10 +39,16 @@ class OfferController extends BaseController
         try {
             $data = $request->validated();
 
+            // 🔥 فصل المنتجات
+            $productIds = $data['product_ids'] ?? [];
+            unset($data['product_ids']);
+
+            // إنشاء العرض
             $offer = $this->crudRepository->create($data);
 
-            if (isset($data['product_ids'])) {
-                $offer->products()->sync($data['product_ids']);
+            // ربط المنتجات
+            if (!empty($productIds)) {
+                $offer->products()->sync($productIds);
             }
 
             activity()
@@ -56,8 +62,6 @@ class OfferController extends BaseController
             return JsonResponse::respondError($e->getMessage());
         }
     }
-
-
     public function show(Offer $offer): ?\Illuminate\Http\JsonResponse
     {
         try {
@@ -67,16 +71,21 @@ class OfferController extends BaseController
         }
     }
 
-
     public function update(OfferRequest $request, Offer $offer)
     {
         try {
             $data = $request->validated();
 
+            // 🔥 فصل المنتجات
+            $productIds = $data['product_ids'] ?? null;
+            unset($data['product_ids']);
+
+            // تحديث العرض
             $this->crudRepository->update($data, $offer->id);
 
-            if (isset($data['product_ids'])) {
-                $offer->products()->sync($data['product_ids']);
+            // مزامنة المنتجات
+            if (!is_null($productIds)) {
+                $offer->products()->sync($productIds);
             }
 
             activity()
