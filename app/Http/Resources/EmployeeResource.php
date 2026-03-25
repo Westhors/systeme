@@ -16,20 +16,14 @@ class EmployeeResource extends JsonResource
             'name_ar'       => $this->name_ar,
             'position'      => $this->position,
             'department'    => $this->department,
-            
-            // ✅ الصلاحية
-            'role' => [
-                'id' => $this->role?->id,
-                'name' => $this->role?->name,
-            ],
-            
+
             // ✅ الفرع
             'branch' => $this->branch ? [
                 'id' => $this->branch->id,
                 'name' => $this->branch->name,
                 'name_ar' => $this->branch->name_ar,
             ] : null,
-            
+
             // ✅ الخزينة
             'treasury' => $this->treasury ? [
                 'id' => $this->treasury->id,
@@ -37,12 +31,13 @@ class EmployeeResource extends JsonResource
                 'name_ar' => $this->treasury->name_ar,
                 'is_main' => $this->treasury->is_main,
             ] : null,
-            
+
             'phone'         => $this->phone,
             'email'         => $this->email,
             'salary'        => $this->salary,
             'is_active'     => $this->is_active,
             'created_at'    => $this->created_at?->format('Y-m-d H:i:s'),
+            'role' => $this->role?->name ,
         ];
     }
 }
