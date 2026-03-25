@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\InventoryLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,6 +32,15 @@ class InventoryLogResource extends JsonResource
 
             'created_at' => optional($this->created_at)->format('Y-m-d H:i'),
         ];
+    }
+
+    public function show(InventoryLog $inventoryLog)
+    {
+        return response()->json([
+            'result' => 'Success',
+            'message' => 'Inventory log details fetched successfully',
+            'data' => new InventoryLogResource($inventoryLog),
+        ]);
     }
 }
 
