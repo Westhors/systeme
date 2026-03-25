@@ -202,7 +202,7 @@ class WarehouseController extends BaseController
     }
 
 
- public function inventoryStore(Request $request)
+    public function inventoryStore(Request $request)
     {
         DB::beginTransaction();
 
@@ -262,7 +262,26 @@ class WarehouseController extends BaseController
         }
     }
 
+    public function updateCountedStock(Request $request, InventoryLog $inventoryLog)
+    {
+        $request->validate([
+            'counted_stock' => 'required|integer|min:0',
+            'note' => 'nullable|string',
+        ]);
 
+        // تحديث counted_stock و note
+        $inventoryLog->update([
+            'counted_stock' => $request->counted_stock,
+            'note' => $request->note,
+            'difference' => $request->counted_stock - $inventoryLog->system_stock, // تحديث الفرق
+        ]);
+
+        return response()->json([
+            'result' => 'Success',
+            'message' => 'Inventory log updated successfully',
+            'data' => $inventoryLog,
+        ]);
+    }
 
 
 }
