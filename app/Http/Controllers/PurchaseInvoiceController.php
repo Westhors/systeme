@@ -7,6 +7,7 @@ use App\Http\Resources\PurchaseInvoiceResource;
 use App\Models\Product;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
+use App\Models\Transfer;
 use App\Models\Treasury;
 use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
@@ -91,34 +92,28 @@ class PurchaseInvoiceController extends Controller
                 }
             }
 
-            // ✅ ✅ ✅ إنشاء حركة خزنية وتحديث رصيد الخزينة (في حالة الدفع النقدي)
-            if ($request->payment_method === 'cash' && $request->paid_amount > 0 && $request->treasury_id) {
-                // 1. إنشاء حركة خزنية
-                TreasuryTransaction::create([
-                    'treasury_id' => $request->treasury_id,
-                    'reference_type' => PurchaseInvoice::class,
-                    'reference_id' => $invoice->id,
-                    'type' => 'out', // خارج من الخزينة (مصروف)
-                    'amount' => $request->paid_amount,
-                    'description' => "دفعة لفاتورة مشتريات رقم {$invoice->invoice_number}",
-                    'created_at' => now(),
-                ]);
+             if ($request->payment_method === 'cash' && $request->paid_amount > 0 && $request->treasury_id) {
 
-                // 2. تحديث رصيد الخزينة (نقص)
-                $treasury = Treasury::find($request->treasury_id);
-                if ($treasury) {
-                    $treasury->decrement('balance', $request->paid_amount);
-                    
-                    // لو عاوز تسجل الرصيد بعد التحديث
-                    Log::info("Treasury balance updated", [
-                        'treasury_id' => $treasury->id,
-                        'old_balance' => $treasury->balance + $request->paid_amount,
-                        'new_balance' => $treasury->balance,
-                        'amount' => $request->paid_amount
-                    ]);
+                $treasury = Treasury::lockForUpdate()->find($request->treasury_id);
+
+                if (!$treasury || $treasury->balance < $request->paid_amount) {
+                    throw new \Exception('رصيد الخزنة غير كافي');
                 }
-            }
 
+                if ($request->paid_amount > $total) {
+                    throw new \Exception('المبلغ المدفوع أكبر من إجمالي الفاتورة');
+                }
+
+                $treasury->decrement('balance', $request->paid_amount);
+
+                Transfer::create([
+                    'type' => 'treasury_withdraw',
+                    'treasury_id' => $request->treasury_id,
+                    'purchase_invoice_id' => $invoice->id,
+                    'amount' => $request->paid_amount,
+                    'notes' => "دفعة لفاتورة مشتريات رقم {$invoice->invoice_number}",
+                ]);
+            }
             DB::commit();
 
             return response()->json([
@@ -130,7 +125,7 @@ class PurchaseInvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Purchase invoice creation failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -145,7 +140,7 @@ class PurchaseInvoiceController extends Controller
     }
 
     // ========== باقي الدوال زي ما هي ==========
-    
+
     public function show($id)
     {
         try {
@@ -291,7 +286,7 @@ class PurchaseInvoiceController extends Controller
         try {
             // جلب الفاتورة القديمة
             $invoice = PurchaseInvoice::with('items')->findOrFail($id);
-            
+
             // حفظ البيانات القديمة للمقارنة
             $oldPaidAmount = $invoice->paid_amount;
             $oldTreasuryId = $invoice->treasury_id;
@@ -382,7 +377,7 @@ class PurchaseInvoiceController extends Controller
             }
 
             // 5️⃣ **معالجة الخزينة - تحديث الحركات بناءً على التغيير**
-            
+
             // حذف حركات الخزينة القديمة المرتبطة بالفاتورة
             TreasuryTransaction::where('reference_type', PurchaseInvoice::class)
                 ->where('reference_id', $invoice->id)
@@ -398,7 +393,7 @@ class PurchaseInvoiceController extends Controller
 
             // إنشاء حركة خزنية جديدة (إذا كانت الطريقة نقدي)
             if ($request->payment_method === 'cash' && $request->paid_amount > 0 && $request->treasury_id) {
-                
+
                 // إنشاء حركة خزنية جديدة
                 TreasuryTransaction::create([
                     'treasury_id' => $request->treasury_id,
@@ -414,7 +409,7 @@ class PurchaseInvoiceController extends Controller
                 $treasury = Treasury::find($request->treasury_id);
                 if ($treasury) {
                     $treasury->decrement('balance', $request->paid_amount);
-                    
+
                     Log::info("Treasury balance updated on invoice update", [
                         'treasury_id' => $treasury->id,
                         'amount' => $request->paid_amount,
@@ -434,7 +429,7 @@ class PurchaseInvoiceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Purchase invoice update failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
