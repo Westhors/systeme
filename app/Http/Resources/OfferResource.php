@@ -25,7 +25,7 @@ class OfferResource extends JsonResource
             'end_date'        => $this->end_date,
             'end_time'        => $this->end_time,
 
-            'active'       => $this->is_active,
+            'active'       => $this->active,
 
             'products'        => ProductResource::collection($this->products),
 
