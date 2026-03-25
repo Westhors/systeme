@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\JsonResponse;
 use App\Http\Requests\WarehouseRequest;
 use App\Http\Resources\ProductResource;
+use App\Http\Resources\WarehouseProductResource;
 use App\Http\Resources\WarehouseResource;
 use App\Interfaces\WarehouseRepositoryInterface;
 use App\Models\InventoryLog;
@@ -111,7 +112,7 @@ class WarehouseController extends BaseController
             ->wherePivot('stock', '>', 0)
             ->get();
 
-        return ProductResource::collection($products);
+        return WarehouseProductResource::collection($products);
     }
 
     public function transfer(Request $request)
