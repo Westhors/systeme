@@ -70,14 +70,12 @@ class PurchaseInvoiceController extends Controller
                   $pivot = DB::table('product_unit_colors')
                     ->where('product_unit_id', $item['product_unit_id'])
                     ->where('color_id', $item['color_id'])
-                    ->where('warehouse_id', $request->warehouse_id)
                     ->first();
 
                 if ($pivot) {
                     DB::table('product_unit_colors')
                         ->where('product_unit_id', $item['product_unit_id'])
                         ->where('color_id', $item['color_id'])
-                        ->where('warehouse_id', $request->warehouse_id)
                         ->increment('stock', $item['quantity']);
                 }
 
