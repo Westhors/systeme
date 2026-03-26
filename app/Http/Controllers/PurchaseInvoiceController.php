@@ -60,11 +60,26 @@ class PurchaseInvoiceController extends Controller
                     'product_id' => $item['product_id'],
                     'product_variant_id' => $item['product_variant_id'] ?? null,
                     'quantity' => $item['quantity'],
+                    'product_unit_id'     => $item['product_unit_id'] ?? null, // جديد
+                    'color_id'            => $item['color_id'] ?? null,        // جديد
                     'price' => $item['price'],
                     'discount' => $item['discount'] ?? 0,
                     'tax' => $item['tax'] ?? 0,
                     'total' => ($item['quantity'] * $item['price']) - ($item['discount'] ?? 0) + ($item['tax'] ?? 0),
                 ]);
+                  $pivot = DB::table('product_unit_colors')
+                    ->where('product_unit_id', $item['product_unit_id'])
+                    ->where('color_id', $item['color_id'])
+                    ->where('warehouse_id', $request->warehouse_id)
+                    ->first();
+
+                if ($pivot) {
+                    DB::table('product_unit_colors')
+                        ->where('product_unit_id', $item['product_unit_id'])
+                        ->where('color_id', $item['color_id'])
+                        ->where('warehouse_id', $request->warehouse_id)
+                        ->increment('stock', $item['quantity']);
+                }
 
                 // تحديث المخزون العام للمنتج
                 $product = Product::find($item['product_id']);
