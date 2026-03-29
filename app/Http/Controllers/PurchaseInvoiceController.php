@@ -16,142 +16,175 @@ use Illuminate\Support\Facades\Log;
 
 class PurchaseInvoiceController extends Controller
 {
-    public function store(PurchaseInvoiceRequest $request)
-    {
-        DB::beginTransaction();
+public function store(PurchaseInvoiceRequest $request)
+{
+    DB::beginTransaction();
 
-        try {
-            // Generate invoice number
-            $invoiceNumber = 'PI-' . now()->format('Ymd') . '-' . rand(1000, 9999);
+    try {
+        // Generate invoice number
+        $invoiceNumber = 'PI-' . now()->format('Ymd') . '-' . rand(1000, 9999);
 
-            // حساب المجاميع
-            $subtotal = collect($request->items)->sum(fn($item) => $item['quantity'] * $item['price']);
-            $discountTotal = collect($request->items)->sum('discount');
-            $taxTotal = collect($request->items)->sum('tax');
-            $total = $subtotal - $discountTotal + $taxTotal;
-            $remaining = $total - ($request->paid_amount ?? 0);
+        // حساب المجاميع
+        $subtotal = collect($request->items)->sum(fn($item) => $item['quantity'] * $item['price']);
+        $discountTotal = collect($request->items)->sum('discount');
+        $taxTotal = collect($request->items)->sum('tax');
+        $total = $subtotal - $discountTotal + $taxTotal;
+        $remaining = $total - ($request->paid_amount ?? 0);
 
-            // إنشاء الفاتورة مع الخزينة والمتبقي
-            $invoice = PurchaseInvoice::create([
-                'invoice_number' => $invoiceNumber,
-                'supplier_id' => $request->supplier_id,
-                'branch_id' => $request->branch_id,
-                'warehouse_id' => $request->warehouse_id,
-                'currency_id' => $request->currency_id,
-                'tax_id' => $request->tax_id,
-                'treasury_id' => $request->treasury_id, // ✅ إضافة الخزينة
-                'invoice_date' => $request->invoice_date,
-                'due_date' => $request->due_date,
-                'payment_method' => $request->payment_method,
-                'note' => $request->note,
-                'paid_amount' => $request->paid_amount ?? 0,
-                'remaining_amount' => $remaining, // ✅ إضافة المتبقي
-                'subtotal' => $subtotal,
-                'discount_total' => $discountTotal,
-                'tax_total' => $taxTotal,
-                'total_amount' => $total,
+        // إنشاء الفاتورة
+        $invoice = PurchaseInvoice::create([
+            'invoice_number' => $invoiceNumber,
+            'supplier_id' => $request->supplier_id,
+            'branch_id' => $request->branch_id,
+            'warehouse_id' => $request->warehouse_id,
+            'currency_id' => $request->currency_id,
+            'tax_id' => $request->tax_id,
+            'treasury_id' => $request->treasury_id,
+            'invoice_date' => $request->invoice_date,
+            'due_date' => $request->due_date,
+            'payment_method' => $request->payment_method,
+            'note' => $request->note,
+            'paid_amount' => $request->paid_amount ?? 0,
+            'remaining_amount' => $remaining,
+            'subtotal' => $subtotal,
+            'discount_total' => $discountTotal,
+            'tax_total' => $taxTotal,
+            'total_amount' => $total,
+        ]);
+
+        foreach ($request->items as $item) {
+
+            // إنشاء عنصر الفاتورة
+            PurchaseInvoiceItem::create([
+                'purchase_invoice_id' => $invoice->id,
+                'product_id' => $item['product_id'],
+                'product_variant_id' => $item['product_variant_id'] ?? null,
+                'quantity' => $item['quantity'],
+                'product_unit_id' => $item['product_unit_id'] ?? null,
+                'color_id' => $item['color_id'] ?? null,
+                'price' => $item['price'],
+                'discount' => $item['discount'] ?? 0,
+                'tax' => $item['tax'] ?? 0,
+                'total' => ($item['quantity'] * $item['price']) - ($item['discount'] ?? 0) + ($item['tax'] ?? 0),
             ]);
 
-            // إضافة الأصناف
-            foreach ($request->items as $item) {
-                // إنشاء عنصر الفاتورة
-                PurchaseInvoiceItem::create([
-                    'purchase_invoice_id' => $invoice->id,
-                    'product_id' => $item['product_id'],
-                    'product_variant_id' => $item['product_variant_id'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'product_unit_id'     => $item['product_unit_id'] ?? null, // جديد
-                    'color_id'            => $item['color_id'] ?? null,        // جديد
-                    'price' => $item['price'],
-                    'discount' => $item['discount'] ?? 0,
-                    'tax' => $item['tax'] ?? 0,
-                    'total' => ($item['quantity'] * $item['price']) - ($item['discount'] ?? 0) + ($item['tax'] ?? 0),
-                ]);
+            /*
+            =============================
+            ✅ تحديث product_unit_colors
+            =============================
+            */
+            if (!empty($item['product_unit_id']) && !empty($item['color_id'])) {
 
-                DB::table('product_unit_colors')->updateOrInsert(
-                    [
-                        'product_unit_id' => $item['product_unit_id'],
-                        'color_id' => $item['color_id'],
-                    ],
-                    [
-                        'stock' => DB::raw("stock + {$item['quantity']}"),
-                        'updated_at' => now(),
-                        'created_at' => now(),
-                    ]
-                );
+                // تأكد إن اللون موجود
+                $colorExists = DB::table('colors')
+                    ->where('id', $item['color_id'])
+                    ->exists();
 
-                // تحديث المخزون العام للمنتج
-                $product = Product::find($item['product_id']);
-                if ($product) {
-                    $product->increment('stock', $item['quantity']);
+                if (!$colorExists) {
+                    throw new \Exception("color_id {$item['color_id']} غير موجود");
                 }
 
-                // تحديث المخزون في pivot table product_warehouse
-                $pivot = DB::table('product_warehouse')
-                    ->where('product_id', $item['product_id'])
-                    ->where('warehouse_id', $request->warehouse_id)
-                    ->first();
+                // increment لو موجود
+                $updated = DB::table('product_unit_colors')
+                    ->where('product_unit_id', $item['product_unit_id'])
+                    ->where('color_id', $item['color_id'])
+                    ->increment('stock', $item['quantity']);
 
-                if ($pivot) {
-                    DB::table('product_warehouse')
-                        ->where('product_id', $item['product_id'])
-                        ->where('warehouse_id', $request->warehouse_id)
-                        ->increment('stock', $item['quantity']);
-                } else {
-                    DB::table('product_warehouse')->insert([
-                        'product_id' => $item['product_id'],
-                        'warehouse_id' => $request->warehouse_id,
+                // لو مش موجود → insert
+                if (!$updated) {
+                    DB::table('product_unit_colors')->insert([
+                        'product_unit_id' => $item['product_unit_id'],
+                        'color_id' => $item['color_id'],
                         'stock' => $item['quantity'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
 
-             if ($request->payment_method === 'cash' && $request->paid_amount > 0 && $request->treasury_id) {
+            /*
+            =============================
+            ✅ تحديث stock العام
+            =============================
+            */
+            $product = Product::find($item['product_id']);
+            if ($product) {
+                $product->increment('stock', $item['quantity']);
+            }
 
-                $treasury = Treasury::lockForUpdate()->find($request->treasury_id);
+            /*
+            =============================
+            ✅ product_warehouse
+            =============================
+            */
+            $updated = DB::table('product_warehouse')
+                ->where('product_id', $item['product_id'])
+                ->where('warehouse_id', $request->warehouse_id)
+                ->increment('stock', $item['quantity']);
 
-                if (!$treasury || $treasury->balance < $request->paid_amount) {
-                    throw new \Exception('رصيد الخزنة غير كافي');
-                }
-
-                if ($request->paid_amount > $total) {
-                    throw new \Exception('المبلغ المدفوع أكبر من إجمالي الفاتورة');
-                }
-
-                $treasury->decrement('balance', $request->paid_amount);
-
-                Transfer::create([
-                    'type' => 'treasury_withdraw',
-                    'treasury_id' => $request->treasury_id,
-                    'purchase_invoice_id' => $invoice->id,
-                    'amount' => $request->paid_amount,
-                    'notes' => "دفعة لفاتورة مشتريات رقم {$invoice->invoice_number}",
+            if (!$updated) {
+                DB::table('product_warehouse')->insert([
+                    'product_id' => $item['product_id'],
+                    'warehouse_id' => $request->warehouse_id,
+                    'stock' => $item['quantity'],
                 ]);
             }
-            DB::commit();
-
-            return response()->json([
-                'data' => new PurchaseInvoiceResource($invoice->load('supplier', 'branch', 'warehouse', 'currency', 'tax', 'treasury', 'items.product')),
-                'result' => 'Success',
-                'message' => 'Purchase invoice created successfully',
-                'status' => 200,
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Purchase invoice creation failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'result' => 'Error',
-                'message' => 'Failed to create purchase invoice',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
         }
+
+        /*
+        =============================
+        ✅ الخزنة
+        =============================
+        */
+        if ($request->payment_method === 'cash' && $request->paid_amount > 0 && $request->treasury_id) {
+
+            $treasury = Treasury::lockForUpdate()->find($request->treasury_id);
+
+            if (!$treasury || $treasury->balance < $request->paid_amount) {
+                throw new \Exception('رصيد الخزنة غير كافي');
+            }
+
+            if ($request->paid_amount > $total) {
+                throw new \Exception('المبلغ المدفوع أكبر من إجمالي الفاتورة');
+            }
+
+            $treasury->decrement('balance', $request->paid_amount);
+
+            Transfer::create([
+                'type' => 'treasury_withdraw',
+                'treasury_id' => $request->treasury_id,
+                'purchase_invoice_id' => $invoice->id,
+                'amount' => $request->paid_amount,
+                'notes' => "دفعة لفاتورة مشتريات رقم {$invoice->invoice_number}",
+            ]);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'data' => new PurchaseInvoiceResource(
+                $invoice->load('supplier', 'branch', 'warehouse', 'currency', 'tax', 'treasury', 'items.product')
+            ),
+            'result' => 'Success',
+            'message' => 'Purchase invoice created successfully',
+            'status' => 200,
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        Log::error('Purchase invoice creation failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'result' => 'Error',
+            'message' => 'Failed to create purchase invoice',
+            'error' => config('app.debug') ? $e->getMessage() : null
+        ], 500);
     }
+}
 
     // ========== باقي الدوال زي ما هي ==========
 
