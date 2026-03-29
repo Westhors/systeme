@@ -80,9 +80,9 @@ public function store(PurchaseInvoiceRequest $request)
                     ->where('id', $item['color_id'])
                     ->exists();
 
-                if (!$colorExists) {
-                    throw new \Exception("color_id {$item['color_id']} غير موجود");
-                }
+                // if (!$colorExists) {
+                //     throw new \Exception("color_id {$item['color_id']} غير موجود");
+                // }
 
                 // increment لو موجود
                 $updated = DB::table('product_unit_colors')

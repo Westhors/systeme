@@ -405,7 +405,7 @@ Route::post('/suppliers/import', [SuppliersController::class, 'importSuppliers']
     Route::get('/purchases-invoices/{id}', [PurchaseInvoiceController::class, 'show']);
     Route::put('/purchases-invoices/update/{id}', [PurchaseInvoiceController::class, 'update']);
 
-    //////////////////////////////////////// purchases-invoices ////////////////////////////////
+//////////////////////////////////////// purchases-invoices ////////////////////////////////
 //////////////////////////////////////// purchases-invoices ////////////////////////////////
 
 
