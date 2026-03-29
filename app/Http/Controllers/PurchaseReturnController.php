@@ -7,6 +7,7 @@ use App\Http\Resources\PurchaseReturnResource;
 use App\Models\Product;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseReturn;
+use App\Models\Transfer;
 use App\Models\Treasury;
 use App\Models\TreasuryTransaction;
 use Illuminate\Http\Request;
@@ -139,7 +140,7 @@ class PurchaseReturnController extends Controller
         try {
             // جلب الفاتورة الأصلية
             $invoice = PurchaseInvoice::find($request->purchase_invoices_id);
-            
+
             if (!$invoice) {
                 throw new \Exception('Invoice not found');
             }
@@ -196,37 +197,33 @@ class PurchaseReturnController extends Controller
 
             // ✅ ✅ ✅ إعادة المبلغ للخزينة وتسجيل حركة (في حالة الدفع النقدي)
             if ($invoice->payment_method === 'cash' && $invoice->treasury_id && $total > 0) {
-                
-                // 1. تحديث رصيد الخزينة (زيادة)
-                $treasury = Treasury::find($invoice->treasury_id);
-                if ($treasury) {
-                    $oldBalance = $treasury->balance;
-                    $treasury->increment('balance', $total);
-                    
-                    Log::info("Treasury balance increased from return", [
-                        'treasury_id' => $treasury->id,
-                        'old_balance' => $oldBalance,
-                        'new_balance' => $treasury->balance,
-                        'amount' => $total,
-                        'return_id' => $return->id,
-                        'invoice_id' => $invoice->id
-                    ]);
+
+                $treasury = Treasury::lockForUpdate()->find($invoice->treasury_id);
+
+                if (!$treasury) {
+                    throw new \Exception('الخزنة غير موجودة');
                 }
 
-                // 2. إنشاء حركة خزنية (داخل)
-                TreasuryTransaction::create([
+                // ❗ مهم: ماينفعش ترجع أكتر من المدفوع
+                if ($total > $invoice->paid_amount) {
+                    throw new \Exception('قيمة المرتجع أكبر من المبلغ المدفوع');
+                }
+
+                // ✅ زيادة رصيد الخزنة
+                $treasury->increment('balance', $total);
+
+                // ✅ تسجيل الحركة (زي الفاتورة بس عكس الاتجاه)
+                Transfer::create([
+                    'type' => 'treasury_deposit', // عكس withdraw
                     'treasury_id' => $invoice->treasury_id,
-                    'reference_type' => PurchaseReturn::class,
-                    'reference_id' => $return->id,
-                    'type' => 'in', // داخل للخزينة (مرتجع)
+                    'purchase_invoice_id' => $invoice->id,
                     'amount' => $total,
-                    'description' => "مرتجع مشتريات - فاتورة رقم {$invoice->invoice_number} - مرتجع رقم {$return->return_number}",
-                    'created_at' => now(),
+                    'notes' => "مرتجع لفاتورة مشتريات رقم {$invoice->invoice_number}",
                 ]);
 
-                // 3. تحديث المبلغ المدفوع في الفاتورة (لو حابب)
-                // $invoice->decrement('paid_amount', $total);
-                // $invoice->increment('remaining_amount', $total);
+                // ✅ تحديث الفاتورة
+                $invoice->decrement('paid_amount', $total);
+                $invoice->increment('remaining_amount', $total);
             }
 
             DB::commit();
@@ -238,13 +235,13 @@ class PurchaseReturnController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Purchase return creation failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all()
             ]);
-            
+
             return response()->json([
                 'result' => 'Error',
                 'message' => 'Failed to create purchase return',
@@ -256,12 +253,12 @@ class PurchaseReturnController extends Controller
     public function show($id)
     {
         $return = PurchaseReturn::with([
-            'items.product', 
+            'items.product',
             'purchaseInvoice',
             'treasury', // ✅ إضافة الخزينة
             'treasuryTransactions' // ✅ إضافة حركات الخزينة
         ])->findOrFail($id);
-        
+
         return new PurchaseReturnResource($return);
     }
 }
