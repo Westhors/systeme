@@ -81,12 +81,12 @@ public function store(PurchaseInvoiceRequest $request)
                     ->where('id', $item['color_id'])
                     ->exists();
 
-
                 // increment لو موجود
                 $updated = DB::table('product_unit_colors')
                     ->where('product_unit_id', $item['unit_id'])
                     ->where('color_id', $item['color_id'])
                     ->increment('stock', $item['quantity']);
+
 
 
                 // لو مش موجود → insert
@@ -351,6 +351,8 @@ public function store(PurchaseInvoiceRequest $request)
             'remaining' => $invoice->remaining_amount
         ]);
     }
+
+
 
   public function update(PurchaseInvoiceRequest $request, $id)
     {
