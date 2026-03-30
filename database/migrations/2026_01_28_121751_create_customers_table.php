@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
             $table->integer('point')->nullable();
+            $table->boolean('active')->default(1);
             $table->integer('last_paid_amount')->nullable();
             $table->softDeletes();
             $table->timestamps();

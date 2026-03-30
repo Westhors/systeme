@@ -26,6 +26,7 @@ class CustomerRequest extends FormRequest
             'phone' => 'nullable',
             'email' => 'nullable|email',
             'address' => 'nullable',
+            'active' => 'nullable|boolean',
         ];
     }
 }

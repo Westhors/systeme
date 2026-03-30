@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class PurchaseInvoiceController extends Controller
 {
+
 public function store(PurchaseInvoiceRequest $request)
 {
     DB::beginTransaction();
@@ -60,7 +61,7 @@ public function store(PurchaseInvoiceRequest $request)
                 'product_id' => $item['product_id'],
                 'product_variant_id' => $item['product_variant_id'] ?? null,
                 'quantity' => $item['quantity'],
-                'product_unit_id' => $item['product_unit_id'] ?? null,
+                'product_unit_id' => $item['unit_id'] ?? null,
                 'color_id' => $item['color_id'] ?? null,
                 'price' => $item['price'],
                 'discount' => $item['discount'] ?? 0,
@@ -73,34 +74,32 @@ public function store(PurchaseInvoiceRequest $request)
             ✅ تحديث product_unit_colors
             =============================
             */
-            if (!empty($item['product_unit_id']) && !empty($item['color_id'])) {
+
 
                 // تأكد إن اللون موجود
                 $colorExists = DB::table('colors')
                     ->where('id', $item['color_id'])
                     ->exists();
 
-                // if (!$colorExists) {
-                //     throw new \Exception("color_id {$item['color_id']} غير موجود");
-                // }
 
                 // increment لو موجود
                 $updated = DB::table('product_unit_colors')
-                    ->where('product_unit_id', $item['product_unit_id'])
+                    ->where('product_unit_id', $item['unit_id'])
                     ->where('color_id', $item['color_id'])
                     ->increment('stock', $item['quantity']);
+
 
                 // لو مش موجود → insert
                 if (!$updated) {
                     DB::table('product_unit_colors')->insert([
-                        'product_unit_id' => $item['product_unit_id'],
+                        'product_unit_id' => $item['unit_id'],
                         'color_id' => $item['color_id'],
                         'stock' => $item['quantity'],
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
                 }
-            }
+
 
             /*
             =============================
@@ -324,6 +323,33 @@ public function store(PurchaseInvoiceRequest $request)
                 'status' => 500,
             ]);
         }
+    }
+
+
+
+    public function pay(Request $request, PurchaseInvoice $invoice)
+    {
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0.01'
+        ]);
+
+        $newPaid = $invoice->paid_amount + $data['amount'];
+
+        if ($newPaid > $invoice->total_amount) {
+            return response()->json([
+                'message' => 'Amount exceeds total invoice value'
+            ], 422);
+        }
+
+        $invoice->update([
+            'paid_amount' => $newPaid
+        ]);
+
+        return response()->json([
+            'message' => 'Payment updated successfully',
+            'invoice' => $invoice,
+            'remaining' => $invoice->remaining_amount
+        ]);
     }
 
   public function update(PurchaseInvoiceRequest $request, $id)
