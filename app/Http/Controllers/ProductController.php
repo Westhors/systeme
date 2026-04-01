@@ -418,8 +418,8 @@ public function update(ProductRequest $request, Product $product)
             'items' => 'required|array|min:1',
             'items.*.product_id'   => 'required|exists:products,id',
             'items.*.warehouse_id' => 'required|exists:warehouses,id',
-            'items.*.unit_id'      => 'required|exists:units,id',
-            'items.*.color_id'     => 'required|exists:colors,id',
+            'items.*.unit_id'      => 'nullable|exists:units,id',
+            'items.*.color_id'     => 'nullable|exists:colors,id',
             'items.*.stock'        => 'required|numeric|min:1',
             'items.*.cost'         => 'required|numeric|min:0',
         ]);
