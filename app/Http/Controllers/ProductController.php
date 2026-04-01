@@ -336,7 +336,6 @@ public function update(ProductRequest $request, Product $product)
 
     // Query أساسي
     $itemsQuery = InvoiceItem::with([
-        'invoice.branch',
         'product.category'
     ]);
 
