@@ -415,43 +415,50 @@ public function update(ProductRequest $request, Product $product)
     public function addStock(Request $request)
     {
         $request->validate([
-            'product_id'   => 'required|exists:products,id',
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'unit_id'      => 'required|exists:units,id',
-            'color_id'     => 'required|exists:colors,id',
-            'stock'        => 'required|numeric|min:1',
+            'items' => 'required|array|min:1',
+            'items.*.product_id'   => 'required|exists:products,id',
+            'items.*.warehouse_id' => 'required|exists:warehouses,id',
+            'items.*.unit_id'      => 'required|exists:units,id',
+            'items.*.color_id'     => 'required|exists:colors,id',
+            'items.*.stock'        => 'required|numeric|min:1',
+            'items.*.cost'         => 'required|numeric|min:0',
         ]);
 
         DB::beginTransaction();
 
         try {
 
-            // 1️⃣ تحديث المنتج الأساسي
-            $product = Product::findOrFail($request->product_id);
-            $product->increment('stock', $request->stock);
-            $product->beginning_balance=1;
-            $product->save();
-            // 2️⃣ product_warehouse
-            $productWarehouse = ProductWarehouse::firstOrCreate([
-                'product_id'   => $request->product_id,
-                'warehouse_id' => $request->warehouse_id,
-            ]);
+            foreach ($request->items as $item) {
 
-            $productWarehouse->increment('stock', $request->stock);
+                // 1️⃣ المنتج
+                $product = Product::findOrFail($item['product_id']);
+                $product->increment('stock', $item['stock']);
+                $product->cost = $item['cost']; // 👈 إضافة cost
+                $product->beginning_balance = 1;
+                $product->save();
 
-            // 3️⃣ product_units
-            $productUnit = ProductUnit::firstOrCreate([
-                'product_id' => $request->product_id,
-                'unit_id'    => $request->unit_id,
-            ]);
+                // 2️⃣ warehouse
+                $productWarehouse = ProductWarehouse::firstOrCreate([
+                    'product_id'   => $item['product_id'],
+                    'warehouse_id' => $item['warehouse_id'],
+                ]);
 
-            // 4️⃣ product_unit_colors
-            $unitColor = ProductUnitColor::firstOrCreate([
-                'product_unit_id' => $productUnit->id,
-                'color_id'        => $request->color_id,
-            ]);
+                $productWarehouse->increment('stock', $item['stock']);
 
-            $unitColor->increment('stock', $request->stock);
+                // 3️⃣ unit
+                $productUnit = ProductUnit::firstOrCreate([
+                    'product_id' => $item['product_id'],
+                    'unit_id'    => $item['unit_id'],
+                ]);
+
+                // 4️⃣ color
+                $unitColor = ProductUnitColor::firstOrCreate([
+                    'product_unit_id' => $productUnit->id,
+                    'color_id'        => $item['color_id'],
+                ]);
+
+                $unitColor->increment('stock', $item['stock']);
+            }
 
             DB::commit();
 
@@ -461,6 +468,7 @@ public function update(ProductRequest $request, Product $product)
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'error' => $e->getMessage()
             ], 500);
