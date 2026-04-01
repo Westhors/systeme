@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('unit_id')->constrained()->cascadeOnDelete();
 
-            $table->decimal('cost_price', 10, 2);
-            $table->decimal('sell_price', 10, 2);
+            $table->decimal('cost_price', 10, 2)->nullable();
+            $table->decimal('sell_price', 10, 2)->nullable();
             $table->string('barcode')->nullable()->unique();
 
             $table->timestamps();
