@@ -197,6 +197,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 Route::get('/reports/revenue', [ProductController::class, 'getRevenueReport']);
 Route::post('/products/import', [ProductController::class, 'importProducts']);
+Route::post('/products/add-stock', [ProductController::class, 'addStock']);
 
 //////////////////////////////////////// product ////////////////////////////////
 //////////////////////////////////////// product ////////////////////////////////

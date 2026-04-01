@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use App\Models\InvoiceItem;
+use App\Models\ProductUnit;
+use App\Models\ProductUnitColor;
+use App\Models\ProductWarehouse;
+
 class ProductController extends BaseController
 {
 
@@ -401,6 +405,62 @@ public function update(ProductRequest $request, Product $product)
             return response()->json([
                 'status' => false,
                 'message' => 'حدث خطأ أثناء الاستيراد',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+    public function addStock(Request $request)
+    {
+        $request->validate([
+            'product_id'   => 'required|exists:products,id',
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'unit_id'      => 'required|exists:units,id',
+            'color_id'     => 'required|exists:colors,id',
+            'stock'        => 'required|numeric|min:1',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            // 1️⃣ تحديث المنتج الأساسي
+            $product = Product::findOrFail($request->product_id);
+            $product->increment('stock', $request->stock);
+
+            // 2️⃣ product_warehouse
+            $productWarehouse = ProductWarehouse::firstOrCreate([
+                'product_id'   => $request->product_id,
+                'warehouse_id' => $request->warehouse_id,
+            ]);
+
+            $productWarehouse->increment('stock', $request->stock);
+
+            // 3️⃣ product_units
+            $productUnit = ProductUnit::firstOrCreate([
+                'product_id' => $request->product_id,
+                'unit_id'    => $request->unit_id,
+            ]);
+
+            // 4️⃣ product_unit_colors
+            $unitColor = ProductUnitColor::firstOrCreate([
+                'product_unit_id' => $productUnit->id,
+                'color_id'        => $request->color_id,
+            ]);
+
+            $unitColor->increment('stock', $request->stock);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Stock added successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
                 'error' => $e->getMessage()
             ], 500);
         }
