@@ -429,7 +429,8 @@ public function update(ProductRequest $request, Product $product)
             // 1️⃣ تحديث المنتج الأساسي
             $product = Product::findOrFail($request->product_id);
             $product->increment('stock', $request->stock);
-
+            $product->beginning_balance=1;
+            $product->save();
             // 2️⃣ product_warehouse
             $productWarehouse = ProductWarehouse::firstOrCreate([
                 'product_id'   => $request->product_id,
