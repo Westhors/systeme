@@ -397,14 +397,14 @@ public function update(ProductRequest $request, Product $product)
 
             return response()->json([
                 'status' => true,
-                'message' => 'تم استيراد المنتجات بنجاح'
+                'message' => 'The products were imported successfully.'
             ]);
 
         } catch (\Exception $e) {
 
             return response()->json([
                 'status' => false,
-                'message' => 'حدث خطأ أثناء الاستيراد',
+                'message' => 'An error occurred during import',
                 'error' => $e->getMessage()
             ], 500);
         }
