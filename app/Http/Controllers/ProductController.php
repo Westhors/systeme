@@ -321,69 +321,93 @@ public function update(ProductRequest $request, Product $product)
 
         return ProductResource::collection($products);
     }
-    public function getRevenueReport(Request $request)
-        {
-            $data = $request->validate([
-                'branch_id' => 'nullable|exists:branches,id',
-            ]);
+  public function getRevenueReport(Request $request)
+{
+    $data = $request->validate([
+        'branch_id' => 'nullable|exists:branches,id',
+    ]);
 
-            $branch_id = $data['branch_id'] ?? null;
+    $branch_id = $data['branch_id'] ?? null;
 
-            // الفترة الزمنية
-            $today = Carbon::today();
-            $startOfMonth = Carbon::now()->startOfMonth();
-            $threeMonthsAgo = Carbon::now()->subMonths(3)->startOfMonth();
+    // الفترات الزمنية
+    $today = Carbon::today();
+    $startOfMonth = Carbon::now()->startOfMonth();
+    $threeMonthsAgo = Carbon::now()->subMonths(3)->startOfMonth();
 
-            $itemsQuery = InvoiceItem::with(['invoice', 'product.category']);
+    // Query أساسي
+    $itemsQuery = InvoiceItem::with([
+        'invoice.branch',
+        'product.category'
+    ]);
 
-            if ($branch_id) {
-                // فلترة على الفرع
-                $itemsQuery->whereHas('product.purchaseInvoiceItems.invoice', function($q) use ($branch_id) {
-                    $q->where('branch_id', $branch_id);
-                });
-            }
+    // فلترة حسب الفرع
+    if ($branch_id) {
+        $itemsQuery->whereHas('invoice', function ($q) use ($branch_id) {
+            $q->where('branch_id', $branch_id);
+        });
+    }
 
-            $items = $itemsQuery->get();
+    // هات الداتا
+    $items = $itemsQuery->get();
 
-            // الإيرادات حسب الفترة
-            $todayRevenue = $items->where('invoice.created_at', '>=', $today)->sum('total');
-            $monthRevenue = $items->where('invoice.created_at', '>=', $startOfMonth)->sum('total');
-            $threeMonthsRevenue = $items->where('invoice.created_at', '>=', $threeMonthsAgo)->sum('total');
+    // =========================
+    // الإيرادات حسب الفترة
+    // =========================
+    $todayRevenue = $items->filter(function ($item) use ($today) {
+        return $item->invoice && $item->invoice->created_at >= $today;
+    })->sum('total');
 
-            // أكثر 5 Categories طلبًا
-            $topCategories = $items->groupBy('product.category_id')
-                ->map(fn($group) => $group->sum('quantity'))
-                ->sortDesc()
-                ->take(5)
-                ->map(function($sum, $category_id) use ($items) {
-                    $category = $items->firstWhere('product.category_id', $category_id)?->product?->category;
-                    return [
-                        'category_id' => $category_id,
-                        'category_name' => $category?->name ?? 'N/A',
-                        'total_quantity' => $sum
-                    ];
-                })
-                ->values();
+    $monthRevenue = $items->filter(function ($item) use ($startOfMonth) {
+        return $item->invoice && $item->invoice->created_at >= $startOfMonth;
+    })->sum('total');
 
-            // الإيرادات لكل فرع
-            $branchRevenues = $items->groupBy(function($item) {
-                return $item->product->purchaseInvoiceItems->first()?->invoice?->branch_id;
-            })->map(function($group, $branchId) {
-                $branchName = $group->first()?->product->purchaseInvoiceItems->first()?->invoice?->branch?->name;
-                return [
-                    'branch_name' => $branchName ?? 'N/A',
-                    'revenue' => $group->sum('total')
-                ];
-            })->values();
+    $threeMonthsRevenue = $items->filter(function ($item) use ($threeMonthsAgo) {
+        return $item->invoice && $item->invoice->created_at >= $threeMonthsAgo;
+    })->sum('total');
 
-            return response()->json([
-                'today_revenue' => $todayRevenue,
-                'month_revenue' => $monthRevenue,
-                'three_months_revenue' => $threeMonthsRevenue,
-                'top_categories' => $topCategories,
-                'branch_revenues' => $branchRevenues
-            ]);
-        }
+    // =========================
+    // Top Categories
+    // =========================
+    $topCategories = $items
+        ->filter(fn($item) => $item->product && $item->product->category)
+        ->groupBy('product.category_id')
+        ->map(function ($group, $category_id) {
+            return [
+                'category_id' => $category_id,
+                'category_name' => optional($group->first()->product->category)->name,
+                'total_quantity' => $group->sum('quantity')
+            ];
+        })
+        ->sortByDesc('total_quantity')
+        ->take(5)
+        ->values();
+
+    // =========================
+    // الإيرادات لكل فرع
+    // =========================
+    $branchRevenues = $items
+        ->filter(fn($item) => $item->invoice) // نتأكد إن فيه invoice
+        ->groupBy(function ($item) {
+            return $item->invoice->branch_id;
+        })
+        ->map(function ($group) {
+            $branch = optional($group->first()->invoice->branch);
+
+            return [
+                'branch_name' => $branch->name ?? 'N/A',
+                'revenue' => $group->sum('total')
+            ];
+        })
+        ->values();
+
+    return response()->json([
+        'today_revenue' => $todayRevenue,
+        'month_revenue' => $monthRevenue,
+        'three_months_revenue' => $threeMonthsRevenue,
+        'top_categories' => $topCategories,
+        'branch_revenues' => $branchRevenues
+    ]);
+}
 
     public function importProducts(Request $request)
     {
