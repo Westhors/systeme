@@ -74,33 +74,47 @@ public function store(PurchaseInvoiceRequest $request)
             ✅ تحديث product_unit_colors
             =============================
             */
-
-
                 // تأكد إن اللون موجود
                 $colorExists = DB::table('colors')
                     ->where('id', $item['color_id'])
                     ->exists();
+                /*
+                =============================
+                ✅ الحصول على الـ product_unit
+                =============================
+                */
+                $productUnit = DB::table('product_units')
+                    ->where('product_id', $item['product_id'])
+                    ->where('unit_id', $item['unit_id'])
+                    ->first();
 
-                // increment لو موجود
+                if (!$productUnit) {
+                    throw new \Exception('Product unit not found');
+                }
+                /*
+                =============================
+                ✅ تحديث product_unit_colors
+                =============================
+                */
                 $updated = DB::table('product_unit_colors')
-                    ->where('product_unit_id', $item['unit_id'])
+                    ->where('product_unit_id', $productUnit->id)
                     ->where('color_id', $item['color_id'])
                     ->increment('stock', $item['quantity']);
 
-
-
-                // لو مش موجود → insert
+                /*
+                =============================
+                ✅ لو اللون مش موجود → insert
+                =============================
+                */
                 if (!$updated) {
                     DB::table('product_unit_colors')->insert([
-                        'product_unit_id' => $item['unit_id'],
-                        'color_id' => $item['color_id'],
-                        'stock' => $item['quantity'],
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'product_unit_id' => $productUnit->id,
+                        'color_id'        => $item['color_id'],
+                        'stock'           => $item['quantity'],
+                        'created_at'      => now(),
+                        'updated_at'      => now(),
                     ]);
                 }
-
-
             /*
             =============================
             ✅ تحديث stock العام
