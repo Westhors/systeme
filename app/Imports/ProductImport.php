@@ -22,6 +22,8 @@ class ProductImport implements ToCollection, WithHeadingRow
                 Product::create([
                     'name'       => $row['name'],
                     'sku'        => $row['sku'],
+                    'price'      => $row['price'],
+                    'barcode'     => $row['barcode'],
                     'stock'      => $stock,
                     'beginning_balance'      => 1, // ✅ تعيين بداية الرصيد تلقائي
                     'cost'       => $cost,
