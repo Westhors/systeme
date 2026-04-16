@@ -16,19 +16,19 @@ class ProductImport implements ToCollection, WithHeadingRow
 
             foreach ($rows as $row) {
 
-                $stock = $row['stock'] ?? 0;
-                $cost  = $row['cost'] ?? 0;
+                $stock = $row['الكمية'] ?? 0;
+                $cost  = $row['سعر_التكلفة'] ?? 0;
 
                 Product::create([
-                    'name'       => $row['name'],
-                    'sku'        => $row['sku'],
-                    'price'      => $row['price'],
-                    'barcode'     => $row['barcode'],
+                    'name'       => $row['اسم_المنتج'] ?? null,
+                    'sku'        => $row['sku'] ?? null,
+                    'price'      => $row['price'] ?? 0,
+                    'barcode'    => $row['barcode'] ?? null,
                     'stock'      => $stock,
-                    'beginning_balance'      => 1, // ✅ تعيين بداية الرصيد تلقائي
+                    'beginning_balance' => 1,
                     'cost'       => $cost,
-                    'total'      => $stock * $cost, // ✅ القيمة الإجمالية تلقائي
-                    'date'       => now(), // ✅ التاريخ تلقائي
+                    'total'      => $stock * $cost,
+                    'date'       => now(),
                 ]);
             }
 
