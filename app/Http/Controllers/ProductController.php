@@ -383,37 +383,20 @@ public function update(ProductRequest $request, Product $product)
                 return $group->sum('quantity');
             });
 
-       $topCategories = Category::query()
-    ->whereNull('parent_id') // parent categories فقط
-    ->get()
-    ->filter(function ($parent) use ($categorySales) {
-
-        $childIds = Category::where('parent_id', $parent->id)
-            ->pluck('id');
-
-        // رجع الـ parent لو أي child عنده مبيعات
-        return $childIds->contains(function ($childId) use ($categorySales) {
-            return ($categorySales[$childId] ?? 0) > 0;
-        });
-    })
-    ->map(function ($parent) use ($categorySales) {
-
-        $childIds = Category::where('parent_id', $parent->id)
-            ->pluck('id');
-
-        $totalQuantity = $childIds->sum(function ($childId) use ($categorySales) {
-            return $categorySales[$childId] ?? 0;
-        });
-
-        return [
-            'category_id' => $parent->id,
-            'category_name' => $parent->name,
-            'total_quantity' => $totalQuantity
-        ];
-    })
-    ->sortByDesc('total_quantity')
-    ->take(5)
-    ->values();
+        $topCategories = Category::query()
+            ->select('id', 'name')
+            ->get()
+            ->map(function ($category) use ($categorySales) {
+                return [
+                    'category_id' => $category->id,
+                    'category_name' => $category->name, // اسم التصنيف
+                    'total_quantity' => $categorySales[$category->id] ?? 0
+                ];
+            })
+            ->sortByDesc('total_quantity')
+            ->whereNull('parent_id')
+            ->take(5)
+            ->values();
 
         // =========================
         // الإيرادات لكل فرع
