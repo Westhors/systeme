@@ -8,7 +8,10 @@ class Invoice extends BaseModel
 {
     protected $guarded = ['id'];
 
-
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function items()
     {
