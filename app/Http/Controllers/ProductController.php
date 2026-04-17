@@ -394,6 +394,7 @@ public function update(ProductRequest $request, Product $product)
                 ];
             })
             ->sortByDesc('total_quantity')
+            ->take(5)
             ->values();
 
         // =========================
