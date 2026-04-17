@@ -383,41 +383,37 @@ public function update(ProductRequest $request, Product $product)
                 return $group->sum('quantity');
             });
 
-            $topCategories = Category::query()
-                ->whereNull('parent_id')
-                ->get()
-                ->filter(function ($category) use ($categorySales) {
+       $topCategories = Category::query()
+    ->whereNull('parent_id') // parent categories فقط
+    ->get()
+    ->filter(function ($parent) use ($categorySales) {
 
-                    // لو الكاتيجوري نفسها ليها كمية
-                    if (($categorySales[$category->id] ?? 0) > 0) {
-                        return true;
-                    }
+        $childIds = Category::where('parent_id', $parent->id)
+            ->pluck('id');
 
-                    // لو أي sub category تابع ليها فيه كمية
-                    return Category::where('parent_id', $category->id)
-                        ->pluck('id')
-                        ->contains(function ($subId) use ($categorySales) {
-                            return ($categorySales[$subId] ?? 0) > 0;
-                        });
-                })
-                ->map(function ($category) use ($categorySales) {
+        // رجع الـ parent لو أي child عنده مبيعات
+        return $childIds->contains(function ($childId) use ($categorySales) {
+            return ($categorySales[$childId] ?? 0) > 0;
+        });
+    })
+    ->map(function ($parent) use ($categorySales) {
 
-                    $subIds = Category::where('parent_id', $category->id)
-                        ->pluck('id');
+        $childIds = Category::where('parent_id', $parent->id)
+            ->pluck('id');
 
-                    $subTotal = $subIds->sum(function ($subId) use ($categorySales) {
-                        return $categorySales[$subId] ?? 0;
-                    });
+        $totalQuantity = $childIds->sum(function ($childId) use ($categorySales) {
+            return $categorySales[$childId] ?? 0;
+        });
 
-                    return [
-                        'category_id' => $category->id,
-                        'category_name' => $category->name,
-                        'total_quantity' => ($categorySales[$category->id] ?? 0) + $subTotal
-                    ];
-                })
-                ->sortByDesc('total_quantity')
-                ->take(5)
-                ->values();
+        return [
+            'category_id' => $parent->id,
+            'category_name' => $parent->name,
+            'total_quantity' => $totalQuantity
+        ];
+    })
+    ->sortByDesc('total_quantity')
+    ->take(5)
+    ->values();
 
         // =========================
         // الإيرادات لكل فرع
