@@ -383,19 +383,41 @@ public function update(ProductRequest $request, Product $product)
                 return $group->sum('quantity');
             });
 
-        $topCategories = Category::query()
-            ->select('id', 'name')
-            ->get()
-            ->map(function ($category) use ($categorySales) {
-                return [
-                    'category_id' => $category->id,
-                    'category_name' => $category->name, // اسم التصنيف
-                    'total_quantity' => $categorySales[$category->id] ?? 0
-                ];
-            })
-            ->sortByDesc('total_quantity')
-            ->take(5)
-            ->values();
+            $topCategories = Category::query()
+                ->whereNull('parent_id')
+                ->get()
+                ->filter(function ($category) use ($categorySales) {
+
+                    // لو الكاتيجوري نفسها ليها كمية
+                    if (($categorySales[$category->id] ?? 0) > 0) {
+                        return true;
+                    }
+
+                    // لو أي sub category تابع ليها فيه كمية
+                    return Category::where('parent_id', $category->id)
+                        ->pluck('id')
+                        ->contains(function ($subId) use ($categorySales) {
+                            return ($categorySales[$subId] ?? 0) > 0;
+                        });
+                })
+                ->map(function ($category) use ($categorySales) {
+
+                    $subIds = Category::where('parent_id', $category->id)
+                        ->pluck('id');
+
+                    $subTotal = $subIds->sum(function ($subId) use ($categorySales) {
+                        return $categorySales[$subId] ?? 0;
+                    });
+
+                    return [
+                        'category_id' => $category->id,
+                        'category_name' => $category->name,
+                        'total_quantity' => ($categorySales[$category->id] ?? 0) + $subTotal
+                    ];
+                })
+                ->sortByDesc('total_quantity')
+                ->take(5)
+                ->values();
 
         // =========================
         // الإيرادات لكل فرع
