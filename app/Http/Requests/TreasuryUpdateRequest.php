@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class TreasuryRequest extends FormRequest
+class TreasuryUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,7 +23,7 @@ class TreasuryRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
             'code' => [
                 'nullable',
                 'string',
@@ -32,8 +32,8 @@ class TreasuryRequest extends FormRequest
             ],
             'branch_id' => 'nullable|exists:branches,id',
             'balance' => 'nullable|numeric|min:0',
-            'currency' => 'required|string|max:10',
-            'is_main' => 'required|boolean',
+            'currency' => 'nullable|string|max:10',
+            'is_main' => 'nullable|boolean',
             'notes' => 'nullable|string',
         ];
     }
