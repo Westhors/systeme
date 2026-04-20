@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\JsonResponse;
 use App\Http\Requests\TreasuryRequest;
+use App\Http\Requests\TreasuryUpdateRequest;
 use App\Http\Resources\TreasuryResource;
 use App\Interfaces\TreasuryRepositoryInterface;
 use App\Models\Treasury;
@@ -54,7 +55,7 @@ class TreasuryController extends BaseController
     }
 
 
-    public function update(TreasuryRequest $request, Treasury $Treasury)
+    public function update(TreasuryUpdateRequest $request, Treasury $Treasury)
     {
         try {
             $this->crudRepository->update($request->validated(), $Treasury->id);
