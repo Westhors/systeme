@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\JsonResponse;
 use App\Http\Requests\ProductRequest;
+use App\Http\Requests\ProductUpdateRequest;
 use App\Http\Resources\ProductResource;
 use App\Imports\ProductImport;
 use App\Interfaces\ProductRepositoryInterface;
@@ -127,7 +128,7 @@ class ProductController extends BaseController
 
 
 
-public function update(ProductRequest $request, Product $product)
+public function update(ProductUpdateRequest $request, Product $product)
 {
     DB::beginTransaction();
 
