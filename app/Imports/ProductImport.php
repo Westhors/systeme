@@ -16,23 +16,17 @@ class ProductImport implements ToCollection, WithHeadingRow
 
             foreach ($rows as $row) {
 
-                $stock = (int) ($row['stock'] ?? 0);
-                $cost  = (float) str_replace(',', '', $row['cost'] ?? 0);
-                $price = (float) str_replace(',', '', $row['price'] ?? 0);
-
-                $barcode = !empty($row['barcode'])
-                    ? trim($row['barcode'])
-                    : null;
-
-                Product::create([
-                    'name'       => $row['name'],
-                    'sku'        => $row['sku'],
-                    'price'      => $price,
-                    'barcode'    => $barcode,
-                    'stock'      => $stock,
-                    'beginning_balance' => 1,
-                    'cost'       => $cost,
-                ]);
+                Product::updateOrCreate(
+                    ['sku' => trim($row['sku'])],
+                    [
+                        'name'       => trim($row['name']),
+                        'price'      => (float) str_replace(',', '', $row['price'] ?? 0),
+                        'barcode'    => !empty($row['barcode']) ? trim($row['barcode']) : null,
+                        'stock'      => (int) ($row['stock'] ?? 0),
+                        'beginning_balance' => 1,
+                        'cost'       => (float) str_replace(',', '', $row['cost'] ?? 0),
+                    ]
+                );
             }
 
         });
