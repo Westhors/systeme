@@ -16,6 +16,7 @@ class CashierShiftResource extends JsonResource
             'closing_balance'  => $this->closing_balance,
             'cash_sales'       => $this->cash_sales,
             'card_sales'       => $this->card_sales,
+            'wallet_sales'     => $this->wallet_sales,
             'returns_amount'   => $this->returns_amount,
             'expected_amount'  => $this->expected_amount,
             'actual_amount'    => $this->actual_amount,

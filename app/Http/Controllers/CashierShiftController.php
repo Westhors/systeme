@@ -92,7 +92,7 @@ class CashierShiftController extends Controller
                 ], 404);
             }
 
-            $expected = ($shift->cash_sales + $shift->card_sales - $shift->returns_amount);
+            $expected = ($shift->cash_sales + $shift->card_sales + $shift->wallet_sales - $shift->returns_amount);
 
             $shift->update([
                 'closing_balance' => $request->actual_amount,

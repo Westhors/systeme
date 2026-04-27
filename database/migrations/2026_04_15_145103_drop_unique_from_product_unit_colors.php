@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('product_unit_colors', function (Blueprint $table) {
-            $table->dropUnique('product_unit_colors_product_unit_id_color_id_unique');
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('product_unit_colors', function (Blueprint $table) {
-            $table->unique(['product_unit_id', 'color_id']);
-        });
+        try {
+            Schema::table('product_unit_colors', function (Blueprint $table) {
+                $table->dropUnique(['product_unit_id', 'color_id']);
+            });
+        } catch (\Exception $e) {
+            // ignore if already dropped
+        }
     }
 };

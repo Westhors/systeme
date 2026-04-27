@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('invoice_number')->unique()->nullable();
             $table->decimal('total_amount', 10, 2)->nullable();
             $table->decimal('paid_amount', 10, 2)->nullable();
+            $table->decimal('discount_percentage', 10, 2)->default(0);
+            $table->decimal('discount_amount', 10, 2)->default(0);
             $table->decimal('remaining_amount', 10, 2)->default(0);
             $table->string('status')->default('paid'); // paid | partial | unpaid
             $table->softDeletes();

@@ -22,6 +22,7 @@ return new class extends Migration
 
             $table->decimal('cash_sales', 10, 2)->default(0);
             $table->decimal('card_sales', 10, 2)->default(0);
+            $table->decimal('wallet_sales', 10, 2)->default(0);
             $table->decimal('returns_amount', 10, 2)->default(0);
 
             $table->decimal('expected_amount', 10, 2)->nullable();

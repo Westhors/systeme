@@ -30,9 +30,9 @@ class InvoiceController extends Controller
             $paginate = $request->boolean('paginate', true);
 
             $query = Invoice::with([
-                'customer', 
-                'cashier', 
-                'treasury', 
+                'customer',
+                'cashier',
+                'treasury',
                 'salesRepresentative',
                 'shift'
             ]);
@@ -133,15 +133,15 @@ class InvoiceController extends Controller
         try {
             // ✅ جلب المستخدم الحالي
             $user = auth()->user();
-            
+
             // ✅ تحديد cashier_id (الموظف) و treasury_id (الخزينة بتاعته)
             $cashierId = null;
             $treasuryId = null;
-            
+
             if ($user instanceof Employee) {
                 $cashierId = $user->id;
                 $treasuryId = $user->treasury_id; // الخزينة بتاعة الموظف من جدول employees
-                
+
                 // التحقق من وجود خزينة للموظف
                 if (!$treasuryId) {
                     DB::rollBack();
@@ -155,7 +155,7 @@ class InvoiceController extends Controller
                 $cashierId = null;
                 $mainTreasury = Treasury::where('is_main', true)->first();
                 $treasuryId = $mainTreasury?->id;
-                
+
                 if (!$treasuryId) {
                     DB::rollBack();
                     return response()->json([
@@ -172,9 +172,17 @@ class InvoiceController extends Controller
             $paid = collect($request->payments)->sum('amount');
             $cashPaid = collect($request->payments)->where('method', 'cash')->sum('amount');
             $cardPaid = collect($request->payments)->where('method', 'card')->sum('amount');
+            $walletPaid = collect($request->payments)
+                ->where('method', 'wallet')
+                ->sum('amount');
 
             $invoiceNumber = 'INV-' . now()->format('Ymd') . '-' . rand(1000, 9999);
 
+            $discountPercentage = $request->discount_percentage ?? 0;
+
+            $discountAmount = ($total * $discountPercentage) / 100;
+
+            $netTotal = $total - $discountAmount;
             // ✅ إنشاء الفاتورة مع cashier_id و treasury_id
             $invoice = Invoice::create([
                 'invoice_number'   => $invoiceNumber,
@@ -182,10 +190,14 @@ class InvoiceController extends Controller
                 'sales_representative_id' => $request->sales_representative_id,
                 'cashier_id'       => $cashierId,
                 'treasury_id'      => $treasuryId,
-                'total_amount'     => $total,
+
+                'total_amount'     => $netTotal,
+                'discount_percentage' => $discountPercentage,
+                'discount_amount'  => $discountAmount,
+
                 'paid_amount'      => $paid,
-                'remaining_amount' => $total - $paid,
-                'status'           => $paid >= $total ? 'paid' : 'partial',
+                'remaining_amount' => $netTotal - $paid,
+                'status'           => $paid >= $netTotal ? 'paid' : 'partial',
             ]);
 
             /*
@@ -248,7 +260,7 @@ class InvoiceController extends Controller
                 if ($treasury) {
                     $oldBalance = $treasury->balance;
                     $treasury->increment('balance', $cashPaid);
-                    
+
                     Log::info("💰 Treasury balance increased from invoice", [
                         'treasury_id' => $treasury->id,
                         'treasury_name' => $treasury->name,
@@ -310,9 +322,10 @@ class InvoiceController extends Controller
 
             if ($shift) {
                 $invoice->update(['cashier_shift_id' => $shift->id]);
-                
+
                 $shift->increment('cash_sales', $cashPaid);
                 $shift->increment('card_sales', $cardPaid);
+                $shift->increment('wallet_sales', $walletPaid);
             }
 
             DB::commit();
@@ -322,10 +335,10 @@ class InvoiceController extends Controller
                 'message' => 'Invoice created successfully',
                 'data'    => new InvoiceResource(
                     $invoice->load([
-                        'items', 
-                        'payments', 
-                        'customer', 
-                        'shift', 
+                        'items',
+                        'payments',
+                        'customer',
+                        'shift',
                         'salesRepresentative',
                         'cashier',
                         'treasury'
@@ -351,7 +364,7 @@ class InvoiceController extends Controller
 
         try {
             $invoice = Invoice::with([
-                'items.product', 
+                'items.product',
                 'customer',
                 'cashier',
                 'treasury',
@@ -386,10 +399,10 @@ class InvoiceController extends Controller
     {
         try {
             $invoice = Invoice::with([
-                'items', 
-                'payments', 
-                'customer', 
-                'shift', 
+                'items',
+                'payments',
+                'customer',
+                'shift',
                 'salesRepresentative',
                 'cashier',
                 'treasury'
