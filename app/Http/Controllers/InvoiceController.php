@@ -321,11 +321,12 @@ class InvoiceController extends Controller
                 ->first();
 
             if ($shift) {
-                $invoice->update(['cashier_shift_id' => $shift->id]);
-
-                $shift->increment('cash_sales', $cashPaid);
-                $shift->increment('card_sales', $cardPaid);
-                $shift->increment('wallet_sales', $walletPaid);
+                $shift->update([
+                    'cash_sales'   => ($shift->cash_sales ?? 0) + $cashPaid,
+                    'card_sales'   => ($shift->card_sales ?? 0) + $cardPaid,
+                    'wallet_sales' => ($shift->wallet_sales ?? 0) + $walletPaid,
+                ]);
+                $invoice->update(['shift_id' => $shift->id]);
             }
 
             DB::commit();
