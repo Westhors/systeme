@@ -23,7 +23,7 @@ class ProductImport implements ToCollection, WithHeadingRow
                         'price'      => (float) str_replace(',', '', $row['price'] ?? 0),
                         'barcode'    => !empty($row['barcode']) ? trim($row['barcode']) : null,
                         'stock'      => (int) ($row['stock'] ?? 0),
-                        'beginning_balance' => 0,
+                        'beginning_balance' => 1,
                         'cost'       => (float) str_replace(',', '', $row['cost'] ?? 0),
                     ]
                 );
