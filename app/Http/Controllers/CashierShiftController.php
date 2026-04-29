@@ -124,9 +124,16 @@ class CashierShiftController extends Controller
     }
 
     // عرض كل الورديات
-    public function index()
+    public function index(Request $request)
     {
-        $shifts = cashierShift::with(['employee','admin'])->latest()->get();
+        $shifts = CashierShift::with(['employee', 'admin'])
+            ->when($request->filled('branch_id'), function ($query) use ($request) {
+                $query->whereHas('employee', function ($q) use ($request) {
+                    $q->where('branch_id', $request->branch_id);
+                });
+            })
+            ->latest()
+            ->get();
 
         return response()->json([
             'status' => true,
