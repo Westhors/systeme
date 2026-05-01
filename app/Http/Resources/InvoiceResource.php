@@ -45,6 +45,12 @@ class InvoiceResource extends JsonResource
                 'remaining' => (float) $this->remaining_amount,
             ],
 
+            'total_amount' => (float) $this->total_amount,
+            'discount_percentage' => (float) $this->discount_percentage,
+            'discount_amount' => (float) $this->discount_amount,
+
+
+
             'items' => InvoiceItemResource::collection($this->items),
 
             'payments' => InvoicePaymentResource::collection($this->payments),
