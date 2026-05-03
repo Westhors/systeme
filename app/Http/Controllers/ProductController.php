@@ -470,37 +470,47 @@ public function update(ProductUpdateRequest $request, Product $product)
 
         try {
 
-            foreach ($request->items as $item) {
+        foreach ($request->items as $item) {
 
-                // 1️⃣ المنتج
-                $product = Product::findOrFail($item['product_id']);
-                $product->increment('stock', $item['stock']);
-                $product->cost = $item['cost']; // 👈 إضافة cost
-                $product->beginning_balance = 1;
-                $product->save();
+            // 1️⃣ المنتج
+            $product = Product::findOrFail($item['product_id']);
+            $product->increment('stock', $item['stock']);
+            $product->cost = $item['cost'];
+            $product->beginning_balance = 1;
+            $product->save();
 
-                // 2️⃣ warehouse
-                $productWarehouse = ProductWarehouse::firstOrCreate([
-                    'product_id'   => $item['product_id'],
-                    'warehouse_id' => $item['warehouse_id'],
-                ]);
+            // 2️⃣ warehouse
+            $productWarehouse = ProductWarehouse::firstOrCreate([
+                'product_id'   => $item['product_id'],
+                'warehouse_id' => $item['warehouse_id'],
+            ]);
 
-                $productWarehouse->increment('stock', $item['stock']);
+            $productWarehouse->increment('stock', $item['stock']);
 
-                // 3️⃣ unit
+            // ✅ استخدم data_get عشان لو مش موجود مايعملش error
+            $unitId  = data_get($item, 'unit_id');
+            $colorId = data_get($item, 'color_id');
+
+            $productUnit = null;
+
+            // 3️⃣ unit (اختياري)
+            if ($unitId) {
                 $productUnit = ProductUnit::firstOrCreate([
                     'product_id' => $item['product_id'],
-                    'unit_id'    => $item['unit_id'],
+                    'unit_id'    => $unitId,
                 ]);
+            }
 
-                // 4️⃣ color
+            // 4️⃣ color (اختياري برضه)
+            if ($productUnit && $colorId) {
                 $unitColor = ProductUnitColor::firstOrCreate([
                     'product_unit_id' => $productUnit->id,
-                    'color_id'        => $item['color_id'],
+                    'color_id'        => $colorId,
                 ]);
 
                 $unitColor->increment('stock', $item['stock']);
             }
+        }
 
             DB::commit();
 
