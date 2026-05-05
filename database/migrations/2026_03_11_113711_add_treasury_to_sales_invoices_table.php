@@ -9,7 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sales_invoices', function (Blueprint $table) {
-            $table->foreignId('treasury_id')->constrained()->cascadeOnDelete();
+        $table->foreignId('treasury_id')
+            ->nullable()
+            ->constrained()
+            ->nullOnDelete();
+
         });
     }
 
