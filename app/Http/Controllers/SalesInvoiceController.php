@@ -7,6 +7,7 @@ use App\Http\Resources\SalesInvoiceResource;
 use App\Models\Product;
 use App\Models\SalesInvoice;
 use App\Models\SalesInvoiceItem;
+use App\Models\Treasury;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -30,6 +31,7 @@ class SalesInvoiceController extends Controller
             $invoice = SalesInvoice::create([
                 'invoice_number' => $invoiceNumber,
                 'customer_id' => $request->customer_id,
+                'treasury_id' => $request->treasury_id,
                 'sales_representative_id' => $request->sales_representative_id,
                 'branch_id' => $request->branch_id,
                 'warehouse_id' => $request->warehouse_id,
@@ -67,7 +69,12 @@ class SalesInvoiceController extends Controller
                 // خصم الكمية من المخزون
                 $product->decrement('stock', $item['quantity']);
             }
+            if ($request->treasury_id) {
 
+                $treasury = Treasury::findOrFail($request->treasury_id);
+
+                $treasury->increment('balance', $total);
+            }
             DB::commit();
 
             return new SalesInvoiceResource(

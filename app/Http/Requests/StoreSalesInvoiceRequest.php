@@ -25,6 +25,7 @@ class StoreSalesInvoiceRequest extends FormRequest
             'customer_id' => 'required|exists:customers,id',
             'sales_representative_id' => 'required|exists:sales_representatives,id',
             'branch_id' => 'required|exists:branches,id',
+            'treasury_id' => 'nullable|exists:treasuries,id',
             'warehouse_id' => 'required|exists:warehouses,id',
             'currency_id' => 'required|exists:currencies,id',
             'tax_id' => 'nullable|exists:taxes,id',
