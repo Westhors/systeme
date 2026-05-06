@@ -23,6 +23,8 @@ class SalesInvoiceResource extends JsonResource
                 'name' => $this->salesRepresentative?->name,
             ],
 
+            'treasury' => $this->treasury?->name,
+            'treasury_id' => $this->treasury_id,
             'branch' => $this->branch?->name,
             'warehouse' => $this->warehouse?->name,
 

@@ -43,4 +43,9 @@ class SalesInvoice extends BaseModel
         return $this->belongsTo(Tax::class);
     }
 
+    public function treasury()
+    {
+        return $this->belongsTo(Treasury::class);
+    }
+
 }

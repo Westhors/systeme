@@ -107,6 +107,7 @@ class SalesInvoiceController extends Controller
                 'warehouse',
                 'currency',
                 'tax',
+                'treasury'
             ]);
 
             // =========================
@@ -225,6 +226,7 @@ class SalesInvoiceController extends Controller
                 'warehouse',
                 'currency',
                 'tax',
+                'treasury',
             ])->findOrFail($id);
 
             return response()->json([
