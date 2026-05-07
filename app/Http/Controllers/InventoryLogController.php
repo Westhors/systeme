@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Helpers\JsonResponse;
 use App\Http\Resources\InventoryLogResource;
-use App\Http\Resources\ProductWarehouseResource;
 use App\Interfaces\InventoryRepositoryInterface;
 use App\Models\InventoryLog;
-use App\Models\ProductWarehouse;
 use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -101,33 +99,36 @@ class InventoryLogController extends BaseController
     public function indexProduct(Request $request)
     {
         try {
-
-            $query = ProductWarehouse::with([
-                'product',
-                'warehouse'
-            ]);
+            $query = DB::table('product_warehouse')
+                ->join('products', 'product_warehouse.product_id', '=', 'products.id')
+                ->join('warehouses', 'product_warehouse.warehouse_id', '=', 'warehouses.id')
+                ->select(
+                    'product_warehouse.id',
+                    'products.name as product_name',
+                    'warehouses.name as warehouse_name',
+                    'product_warehouse.stock',
+                    'product_warehouse.cost',
+                    'product_warehouse.created_at',
+                    'product_warehouse.updated_at'
+                );
 
             // البحث باسم المخزن
             if ($request->filled('filters.warehouse_name')) {
-
                 $warehouseName = $request->input('filters.warehouse_name');
 
-                $query->whereHas('warehouse', function ($q) use ($warehouseName) {
-                    $q->where('name', 'LIKE', "%{$warehouseName}%");
-                });
+                $query->where('warehouses.name', 'LIKE', "%{$warehouseName}%");
             }
 
-            $items = $query->orderBy('id', 'asc')->get();
+            $items = $query->orderBy('product_warehouse.id', 'asc')->get();
 
             return response()->json([
-                'data' => ProductWarehouseResource::collection($items),
+                'data' => $items,
                 'result' => 'Success',
                 'message' => 'Product warehouse list fetched successfully',
                 'status' => 200,
             ]);
 
         } catch (\Exception $e) {
-
             return response()->json([
                 'result' => 'Error',
                 'message' => $e->getMessage(),
