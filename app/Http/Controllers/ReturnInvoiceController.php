@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ReturnInvoiceResource;
+use App\Models\Admin;
+use App\Models\CashierShift;
+use App\Models\Employee;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ReturnInvoice;
@@ -87,6 +90,42 @@ class ReturnInvoiceController extends Controller
                 ->performedOn($return)
                 ->withProperties(['invoice_id' => $invoice->id])
                 ->log('return_created');
+
+
+
+                        /*
+        |--------------------------------------------------------------------------
+        | تحديث المرتجع داخل الوردية
+        |--------------------------------------------------------------------------
+        */
+
+        $user = auth()->user();
+
+        $shift = CashierShift::where('status', 'open')
+            ->where(function ($q) use ($user) {
+
+                if ($user instanceof Admin) {
+                    $q->where('admin_id', $user->id);
+
+                } elseif ($user instanceof Employee) {
+                    $q->where('employee_id', $user->id);
+                }
+            })
+            ->latest('opened_at')
+            ->first();
+
+            if ($shift) {
+
+                // زيادة قيمة المرتجعات
+                $shift->update([
+                    'returns_amount' => ($shift->returns_amount ?? 0) + $total,
+                ]);
+
+                // ربط المرتجع بالوردية لو عندك shift_id فى جدول المرتجعات
+                $return->update([
+                    'shift_id' => $shift->id
+                ]);
+            }
 
             DB::commit();
 
