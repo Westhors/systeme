@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Helpers\JsonResponse;
 use App\Http\Resources\InventoryLogResource;
+use App\Http\Resources\ProductResource;
 use App\Interfaces\InventoryRepositoryInterface;
 use App\Models\InventoryLog;
+use App\Models\ProductWarehouse;
 use App\Models\Warehouse;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -96,47 +98,60 @@ class InventoryLogController extends BaseController
     }
 
 
-    public function indexProduct(Request $request)
-    {
-        try {
-            $query = DB::table('product_warehouse')
-                ->join('products', 'product_warehouse.product_id', '=', 'products.id')
-                ->join('warehouses', 'product_warehouse.warehouse_id', '=', 'warehouses.id')
-                ->select(
-                    'product_warehouse.id',
-                    'products.name as product_name',
-                    'warehouses.name as warehouse_name',
-                    'product_warehouse.stock',
-                    'product_warehouse.cost',
-                    'product_warehouse.created_at',
-                    'product_warehouse.updated_at'
-                );
+public function indexProduct(Request $request)
+{
+    try {
 
-            // البحث باسم المخزن
-            if ($request->filled('filters.warehouse_name')) {
-                $warehouseName = $request->input('filters.warehouse_name');
+        $query = ProductWarehouse::with('product');
 
-                $query->where('warehouses.name', 'LIKE', "%{$warehouseName}%");
-            }
+        // البحث باسم المخزن
+        if ($request->filled('filters.warehouse_name')) {
 
-            $items = $query->orderBy('product_warehouse.id', 'asc')->get();
+            $warehouseName = $request->input('filters.warehouse_name');
 
-            return response()->json([
-                'data' => $items,
-                'result' => 'Success',
-                'message' => 'Product warehouse list fetched successfully',
-                'status' => 200,
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'result' => 'Error',
-                'message' => $e->getMessage(),
-                'status' => 500,
-            ], 500);
+            $query->whereHas('warehouse', function ($q) use ($warehouseName) {
+                $q->where('name', 'LIKE', "%{$warehouseName}%");
+            });
         }
-    }
 
+        $items = $query->get()->map(function ($item) {
+
+            return [
+                'id' => $item->id,
+
+                'product_name' => $item->product?->name,
+
+                // تفاصيل المنتج
+                'product' => new ProductResource($item->product),
+
+                'warehouse_name' => $item->warehouse?->name,
+
+                'stock' => $item->stock,
+
+                'cost' => $item->cost,
+
+                'created_at' => $item->created_at,
+
+                'updated_at' => $item->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'data' => $items,
+            'result' => 'Success',
+            'message' => 'Product warehouse list fetched successfully',
+            'status' => 200,
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'result' => 'Error',
+            'message' => $e->getMessage(),
+            'status' => 500,
+        ], 500);
+    }
+}
 
     public function show(InventoryLog $inventoryLog)
     {
