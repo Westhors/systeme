@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\JsonResponse;
 use App\Http\Resources\InventoryLogResource;
+use App\Http\Resources\ProductWarehouseResource;
 use App\Interfaces\InventoryRepositoryInterface;
 use App\Models\InventoryLog;
 use App\Models\ProductWarehouse;
