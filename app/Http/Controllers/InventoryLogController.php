@@ -114,27 +114,29 @@ public function indexProduct(Request $request)
             });
         }
 
-        $items = $query->get()->map(function ($item) {
+$items = $query->get()->map(function ($item) {
 
-            return [
-                'id' => $item->id,
+    return [
 
-                'product_name' => $item->product?->name,
+        'id' => $item->id,
 
-                // تفاصيل المنتج
-                'product' => new ProductResource($item->product),
+        'product_name' => $item->product?->name,
 
-                'warehouse_name' => $item->warehouse?->name,
+        'product' => $item->product
+            ? new ProductResource($item->product)
+            : null,
 
-                'stock' => $item->stock,
+        'warehouse_name' => $item->warehouse?->name,
 
-                'cost' => $item->cost,
+        'stock' => $item->stock,
 
-                'created_at' => $item->created_at,
+        'cost' => $item->cost,
 
-                'updated_at' => $item->updated_at,
-            ];
-        });
+        'created_at' => $item->created_at,
+
+        'updated_at' => $item->updated_at,
+    ];
+});
 
         return response()->json([
             'data' => $items,
