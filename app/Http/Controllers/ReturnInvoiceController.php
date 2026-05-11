@@ -19,50 +19,74 @@ class ReturnInvoiceController extends Controller
     {
         DB::beginTransaction();
 
-       try {
-        $invoice = Invoice::with('items')
-            ->where('invoice_number', $request->invoice_number)
-            ->firstOrFail();
+        try {
 
-        $total = 0;
+            $invoice = Invoice::with('items')
+                ->where('invoice_number', $request->invoice_number)
+                ->firstOrFail();
 
-        foreach ($request->items as $item) {
-            $invoiceItem = $invoice->items->firstWhere('product_id', $item['product_id']);
+            $total = 0;
 
-            if (!$invoiceItem) {
-                return response()->json([
-                    'status' => false,
-                    'message' => "المنتج بالمعرف  مش موجود في الفاتورة {$invoice->invoice_number}"
-                ], 404);
+            foreach ($request->items as $item) {
+
+                $invoiceItem = $invoice->items
+                    ->firstWhere('product_id', $item['product_id']);
+
+                if (!$invoiceItem) {
+
+                    return response()->json([
+                        'status' => false,
+                        'message' => "المنتج غير موجود في الفاتورة {$invoice->invoice_number}"
+                    ], 404);
+                }
+
+                $alreadyReturned = ReturnItem::where('product_id', $item['product_id'])
+                    ->whereHas('returnInvoice', function ($q) use ($invoice) {
+                        $q->where('invoice_id', $invoice->id);
+                    })
+                    ->sum('quantity');
+
+                $remaining = $invoiceItem->quantity - $alreadyReturned;
+
+                if ($item['quantity'] > $remaining) {
+
+                    return response()->json([
+                        'status' => false,
+                        'message' => "الكمية المرتجعة أكبر من المتبقي للمنتج {$invoiceItem->product_name}"
+                    ], 400);
+                }
+
+                $total += $invoiceItem->price * $item['quantity'];
             }
 
-            $alreadyReturned = ReturnItem::where('product_id', $item['product_id'])
-                ->whereHas('returnInvoice', fn($q) => $q->where('invoice_id', $invoice->id))
-                ->sum('quantity');
+            /*
+            |--------------------------------------------------------------------------
+            | إجمالي المدفوعات
+            |--------------------------------------------------------------------------
+            */
 
-            $remaining = $invoiceItem->quantity - $alreadyReturned;
+            $paymentsTotal = collect($request->payments)->sum('amount');
 
-            if ($item['quantity'] > $remaining) {
-                return response()->json([
-                    'status' => false,
-                    'message' => "الكمية المرتجعة أكبر من المتبقي للمنتج {$invoiceItem->product_name}"
-                ], 400);
-            }
+            /*
+            |--------------------------------------------------------------------------
+            | إنشاء المرتجع
+            |--------------------------------------------------------------------------
+            */
 
-            $total += $invoiceItem->price * $item['quantity'];
-        }
-
-
-            // إنشاء المرتجع
             $return = ReturnInvoice::create([
                 'invoice_id'      => $invoice->id,
                 'total_amount'    => $total,
-                'refunded_amount' => $total,
+                'refunded_amount' => $paymentsTotal,
                 'refund_method'   => $request->refund_method,
                 'reason'          => $request->reason,
             ]);
 
-            // حفظ العناصر المرتجعة
+            /*
+            |--------------------------------------------------------------------------
+            | حفظ العناصر المرتجعة
+            |--------------------------------------------------------------------------
+            */
+
             foreach ($request->items as $item) {
 
                 $invoiceItem = $invoice->items
@@ -74,54 +98,59 @@ class ReturnInvoiceController extends Controller
                 $return->items()->create([
                     'product_id'   => $product->id,
                     'product_name' => $product->name,
-                    // 'color'        => $invoiceItem->color ?? null,
-                    // 'size'         => $invoiceItem->size ?? null,
                     'quantity'     => $item['quantity'],
                     'price'        => $invoiceItem->price,
                     'total'        => $invoiceItem->price * $item['quantity'],
                 ]);
 
-                // إعادة للمخزون
+                // إعادة الكمية للمخزون
                 $product->increment('stock', $item['quantity']);
             }
 
-            // Audit Log
+            /*
+            |--------------------------------------------------------------------------
+            | Audit Log
+            |--------------------------------------------------------------------------
+            */
+
             activity()
                 ->performedOn($return)
-                ->withProperties(['invoice_id' => $invoice->id])
+                ->withProperties([
+                    'invoice_id' => $invoice->id
+                ])
                 ->log('return_created');
 
+            /*
+            |--------------------------------------------------------------------------
+            | تحديث المرتجع داخل الوردية
+            |--------------------------------------------------------------------------
+            */
 
+            $user = auth()->user();
 
-                        /*
-        |--------------------------------------------------------------------------
-        | تحديث المرتجع داخل الوردية
-        |--------------------------------------------------------------------------
-        */
+            $shift = CashierShift::where('status', 'open')
+                ->where(function ($q) use ($user) {
 
-        $user = auth()->user();
+                    if ($user instanceof Admin) {
 
-        $shift = CashierShift::where('status', 'open')
-            ->where(function ($q) use ($user) {
+                        $q->where('admin_id', $user->id);
 
-                if ($user instanceof Admin) {
-                    $q->where('admin_id', $user->id);
+                    } elseif ($user instanceof Employee) {
 
-                } elseif ($user instanceof Employee) {
-                    $q->where('employee_id', $user->id);
-                }
-            })
-            ->latest('opened_at')
-            ->first();
+                        $q->where('employee_id', $user->id);
+                    }
+                })
+                ->latest('opened_at')
+                ->first();
 
             if ($shift) {
 
-                // زيادة قيمة المرتجعات
+                // زيادة قيمة المرتجعات بالمبلغ المدفوع فعلياً
                 $shift->update([
-                    'returns_amount' => ($shift->returns_amount ?? 0) + $total,
+                    'returns_amount' => ($shift->returns_amount ?? 0) + $paymentsTotal,
                 ]);
 
-                // ربط المرتجع بالوردية لو عندك shift_id فى جدول المرتجعات
+                // ربط المرتجع بالوردية
                 $return->update([
                     'shift_id' => $shift->id
                 ]);
@@ -138,6 +167,7 @@ class ReturnInvoiceController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+
             DB::rollBack();
 
             return response()->json([
@@ -146,7 +176,6 @@ class ReturnInvoiceController extends Controller
             ], 500);
         }
     }
-
     public function invoiceReturnIndex(Request $request)
     {
         try {
