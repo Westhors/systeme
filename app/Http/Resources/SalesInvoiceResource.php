@@ -36,6 +36,9 @@ class SalesInvoiceResource extends JsonResource
             'note' => $this->note,
 
             'total_amount' => $this->total_amount,
+            'discount_percentage' => $this->discount_percentage ?? 0,
+            'discount_amount' => $this->discount_amount ?? 0,
+            'net_total' => $this->net_total ?? 0,
 
             'items' => $this->items->map(function ($item) {
                 return [

@@ -24,6 +24,9 @@ return new class extends Migration
             $table->foreignId('currency_id')->constrained()->onDelete('cascade');
             $table->foreignId('tax_id')->constrained()->onDelete('cascade');
             $table->decimal('total_amount', 12, 2);
+            $table->decimal('discount_percentage', 10, 2)->default(0);
+            $table->decimal('discount_amount', 10, 2)->default(0);
+            $table->decimal('net_total', 10, 2)->default(0);
             $table->softDeletes();
             $table->timestamps();
         });

@@ -22,12 +22,34 @@ class SalesInvoiceController extends Controller
             // Generate Invoice Number
             $invoiceNumber = 'SI-' . now()->format('Ymd') . '-' . rand(1000, 9999);
 
-            // Calculate total
+            /*
+            |--------------------------------------------------------------------------
+            | حساب الإجمالي
+            |--------------------------------------------------------------------------
+            */
+
             $total = collect($request->items)->sum(function ($item) {
                 return $item['quantity'] * $item['price'];
             });
 
-            // Create invoice
+            /*
+            |--------------------------------------------------------------------------
+            | الخصم
+            |--------------------------------------------------------------------------
+            */
+
+            $discountPercentage = $request->discount_percentage ?? 0;
+
+            $discountAmount = ($total * $discountPercentage) / 100;
+
+            $netTotal = $total - $discountAmount;
+
+            /*
+            |--------------------------------------------------------------------------
+            | إنشاء الفاتورة
+            |--------------------------------------------------------------------------
+            */
+
             $invoice = SalesInvoice::create([
                 'invoice_number' => $invoiceNumber,
                 'customer_id' => $request->customer_id,
@@ -40,24 +62,40 @@ class SalesInvoiceController extends Controller
                 'payment_method' => $request->payment_method,
                 'due_date' => $request->due_date,
                 'note' => $request->note,
+
+                // الإجمالي قبل الخصم
                 'total_amount' => $total,
+
+                // بيانات الخصم
+                'discount_percentage' => $discountPercentage,
+                'discount_amount' => $discountAmount,
+
+                // الصافي بعد الخصم
+                'net_total' => $netTotal,
             ]);
 
-            // Create items
+            /*
+            |--------------------------------------------------------------------------
+            | إنشاء العناصر
+            |--------------------------------------------------------------------------
+            */
+
             foreach ($request->items as $item) {
 
                 $product = Product::findOrFail($item['product_id']);
 
                 // تحقق من كفاية الكمية
                 if ($product->stock < $item['quantity']) {
+
                     DB::rollBack();
+
                     return response()->json([
                         'status' => false,
                         'message' => "الكمية المتوفرة في المخزون للمنتج '{$product->name}' أقل من المطلوبة"
                     ], 400);
                 }
 
-                // إنشاء العنصر في الفاتورة
+                // إنشاء عنصر الفاتورة
                 SalesInvoiceItem::create([
                     'sales_invoice_id' => $invoice->id,
                     'product_id' => $item['product_id'],
@@ -69,27 +107,45 @@ class SalesInvoiceController extends Controller
                 // خصم الكمية من المخزون
                 $product->decrement('stock', $item['quantity']);
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | إضافة الرصيد للخزنة
+            |--------------------------------------------------------------------------
+            */
+
             if ($request->treasury_id) {
 
                 $treasury = Treasury::findOrFail($request->treasury_id);
 
-                $treasury->increment('balance', $total);
+                // إضافة الصافي بعد الخصم
+                $treasury->increment('balance', $netTotal);
             }
+
             DB::commit();
 
             return new SalesInvoiceResource(
-                $invoice->load('items.product', 'customer', 'salesRepresentative', 'branch', 'warehouse', 'currency', 'tax')
+                $invoice->load(
+                    'items.product',
+                    'customer',
+                    'salesRepresentative',
+                    'branch',
+                    'warehouse',
+                    'currency',
+                    'tax'
+                )
             );
 
         } catch (\Exception $e) {
+
             DB::rollBack();
+
             return response()->json([
                 'message' => 'Failed to create invoice',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
-
 
     public function invoiceIndex(Request $request)
     {
